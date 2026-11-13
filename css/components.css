@@ -52,6 +52,7 @@ h1 { margin: 0; font-size: 1.6rem; line-height: 1.1; }
 .btn-primary:hover:not(:disabled) { background: var(--primary-hover); border-color: var(--primary-hover); }
 .btn-ghost { background: transparent; }
 .btn-sm { padding: 7px 10px; font-size: .9rem; border-radius: 8px; }
+.lang-select { padding: 6px 8px; min-width: 58px; background: #162033; color: var(--text); }
 .file-label { display: inline-flex; align-items: center; gap: 6px; }
 .file-label:has(input:disabled) { opacity: .45; cursor: not-allowed; pointer-events: none; }
 

@@ -1,24 +1,29 @@
 import { PixlClient, isWebBluetoothSupported } from '../ble/pixl-client.js';
 import { state, ui } from '../state.js';
+import { t } from '../i18n.js';
 import { log, setStatus, setControlsConnected } from '../ui/status.js';
 import { setBusy } from '../ui/busy.js';
 import { renderDrive, renderFiles, renderPathbar, refreshDriveAndList } from '../ui/browser.js';
-import { getBaseName, getParentPath, utf8Length } from '../ble/pixl-client.js';
+import { getParentPath, utf8Length } from '../ble/pixl-client.js';
 import { MAX_FILE_NAME_BYTES, MAX_FILE_PATH_BYTES, MAX_FOLDER_PATH_BYTES } from '../constants.js';
 import { isValidName } from '../utils.js';
 
-export function initBluetoothSupport() {
+export function initBluetoothSupport(refreshOnly = false) {
   if (isWebBluetoothSupported()) {
-    ui.supportBadge.textContent = 'Web Bluetooth disponible';
+    ui.supportBadge.textContent = t('badge.available');
     ui.supportBadge.className = 'badge badge-ok';
   } else {
-    ui.supportBadge.textContent = 'Web Bluetooth no disponible';
+    ui.supportBadge.textContent = t('badge.unavailable');
     ui.supportBadge.className = 'badge badge-bad';
     ui.connectBtn.disabled = true;
-    setStatus('Este navegador no soporta Web Bluetooth. Usa Chrome o Edge en escritorio/Android.', 'error');
+    if (!refreshOnly) setStatus(t('badge.unavailable') + '. ' + (document.documentElement.lang === 'en' ? 'Use Chrome or Edge on desktop/Android.' : 'Usa Chrome o Edge en escritorio/Android.'), 'error');
   }
   if (!window.showDirectoryPicker) {
-    ui.uploadMultiDirBtn.title = 'Tu navegador no soporta selección de varias carpetas; usa "Subir carpeta" individual.';
+    ui.uploadMultiDirBtn.title = document.documentElement.lang === 'en'
+      ? 'Your browser does not support selecting multiple folders; use individual "Upload folder".'
+      : 'Tu navegador no soporta selección de varias carpetas; usa "Subir carpeta" individual.';
+  } else {
+    ui.uploadMultiDirBtn.title = t('browser.uploadMultiDirTitle');
   }
 }
 
@@ -26,7 +31,7 @@ export async function toggleConnect() {
   if (state.busy) return;
   if (state.client && state.client.connected) {
     state.client.disconnect();
-    setStatus('Desconectado.', 'info');
+    setStatus(t('status.disconnected'), 'info');
     setControlsConnected(false);
     state.entries = [];
     state.drive = null;
@@ -38,11 +43,11 @@ export async function toggleConnect() {
     return;
   }
   try {
-    setStatus('Solicitando dispositivo Bluetooth… (selecciónalo en el diálogo del navegador)', 'info');
+    setStatus(t('status.requesting'), 'info');
     const client = new PixlClient({ log });
     client.onDisconnect = () => {
-      log('Desconectado del dispositivo.', 'warn');
-      setStatus('Dispositivo desconectado.', 'warn');
+      log(t('log.disconnected'), 'warn');
+      setStatus(t('status.deviceDisconnected'), 'warn');
       state.clipboard = null;
       setControlsConnected(false);
       renderFiles();
@@ -50,55 +55,55 @@ export async function toggleConnect() {
     await client.connect();
     state.client = client;
     ui.devName.textContent = client.name || '—';
-    setStatus('Conectado. Leyendo información…', 'info');
+    setStatus(t('status.readingInfo'), 'info');
     try {
       const ver = await client.getVersion();
       if (ver.ok) {
         ui.devVersion.textContent = ver.data.version || '—';
         ui.devAddr.textContent = ver.data.bleAddress || '—';
       } else {
-        log(`No se pudo leer la versión: ${ver.error}`, 'error');
+        log(t('log.versionError', { msg: ver.error }), 'error');
       }
     } catch (ve) {
-      log(`No se pudo leer la versión: ${ve.message}`, 'error');
+      log(t('log.versionError', { msg: ve.message }), 'error');
     }
     setControlsConnected(true);
-    setStatus('Conectado. Cargando archivos…', 'success');
+    setStatus(t('status.connectedLoading'), 'success');
     await refreshDriveAndList();
-    setStatus('Listo. Puedes subir archivos o carpetas.', 'success');
+    setStatus(t('status.ready'), 'success');
   } catch (err) {
-    log(`Conexión fallida: ${err.message}`, 'error');
-    setStatus(`No se pudo conectar: ${err.message}`, 'error');
+    log(t('log.connectionFailed', { msg: err.message }), 'error');
+    setStatus(t('status.connectFailed', { msg: err.message }), 'error');
     setControlsConnected(false);
   }
 }
 
 export async function createFolder() {
   if (!state.client || !state.client.connected || state.busy) return;
-  const name = prompt('Nombre de la nueva carpeta:');
+  const name = prompt(t('prompt.newFolder'));
   if (!name) return;
-  if (/[\\/]/.test(name)) { alert('Nombre inválido.'); return; }
+  if (/[\\/]/.test(name)) { alert(t('alert.invalidName')); return; }
   const base = state.cwd.endsWith('/') ? state.cwd : state.cwd + '/';
   const path = base + name;
-  if (utf8Length(name) > MAX_FILE_NAME_BYTES) { alert(`Nombre demasiado largo (máx ${MAX_FILE_NAME_BYTES} bytes).`); return; }
-  if (utf8Length(path) > MAX_FOLDER_PATH_BYTES) { alert(`Ruta de carpeta demasiado larga (máx ${MAX_FOLDER_PATH_BYTES} bytes).`); return; }
+  if (utf8Length(name) > MAX_FILE_NAME_BYTES) { alert(t('alert.nameTooLong', { max: MAX_FILE_NAME_BYTES })); return; }
+  if (utf8Length(path) > MAX_FOLDER_PATH_BYTES) { alert(t('alert.folderPathTooLong', { max: MAX_FOLDER_PATH_BYTES })); return; }
 
   let ok = false; let errMsg = '';
   try {
-    setBusy(true, `Creando carpeta "${name}"…`);
+    setBusy(true, t('busy.creatingFolder', { name }));
     const res = await state.client.createFolder(path);
     if (!res.ok) throw new Error(res.error);
-    log(`Carpeta creada: ${path}`);
+    log(t('log.folderCreated', { path }));
     await refreshDriveAndList(state.cwd);
     ok = true;
   } catch (err) {
     errMsg = err.message;
-    log(`Error creando carpeta: ${err.message}`, 'error');
+    log(t('msg.errorCreatingFolder', { msg: err.message }), 'error');
   } finally {
     setBusy(false);
   }
-  if (ok) setStatus(`Carpeta creada: ${name}`, 'success');
-  else setStatus(`Error creando carpeta: ${errMsg}`, 'error');
+  if (ok) setStatus(t('msg.folderCreated', { name }), 'success');
+  else setStatus(t('msg.errorCreatingFolder', { msg: errMsg }), 'error');
 }
 
 async function renameAppearedSuccessful(dirPath, oldName, newName) {
@@ -117,49 +122,49 @@ export async function onRename(oldName) {
   if (state.busy) return;
   let proposed = oldName;
   for (;;) {
-    const input = prompt('Nuevo nombre:', proposed);
+    const input = prompt(t('prompt.newName'), proposed);
     if (input == null) return;
     const newName = input.trim();
     if (newName === oldName) return;
-    if (!isValidName(newName)) { alert('Nombre inválido.'); proposed = newName; continue; }
+    if (!isValidName(newName)) { alert(t('alert.invalidName')); proposed = newName; continue; }
     const base = state.cwd.endsWith('/') ? state.cwd : state.cwd + '/';
     const oldPath = base + oldName;
     const newPath = base + newName;
     const isDir = state.entries.some(e => e.name === oldName && (e.type === 'dir' || e.type === 'DIR'));
     const maxPath = isDir ? MAX_FOLDER_PATH_BYTES : MAX_FILE_PATH_BYTES;
-    if (utf8Length(newName) > MAX_FILE_NAME_BYTES) { alert(`Nombre demasiado largo (máx ${MAX_FILE_NAME_BYTES} bytes).`); proposed = newName; continue; }
-    if (utf8Length(newPath) > maxPath) { alert(`Ruta demasiado larga (máx ${maxPath} bytes).`); proposed = newName; continue; }
+    if (utf8Length(newName) > MAX_FILE_NAME_BYTES) { alert(t('alert.nameTooLong', { max: MAX_FILE_NAME_BYTES })); proposed = newName; continue; }
+    if (utf8Length(newPath) > maxPath) { alert(t('alert.pathTooLong', { max: maxPath })); proposed = newName; continue; }
 
     let ok = false;
     let errMsg = '';
     let verifiedDespiteError = false;
     try {
-      setBusy(true, `Renombrando "${oldName}"…`);
+      setBusy(true, t('busy.renaming', { name: oldName }));
       const res = await state.client.renamePath(oldPath, newPath);
       if (!res.ok) throw new Error(res.error);
-      log(`Renombrado: ${oldPath} -> ${newPath}`);
+      log(t('log.renamed', { old: oldPath, new: newPath }));
       await refreshDriveAndList(state.cwd);
       ok = true;
     } catch (e) {
       errMsg = e.message;
-      log(`Error renombrando: ${e.message}`, 'error');
+      log(t('msg.errorRenaming', { msg: e.message }), 'error');
       // Some devices return a command error even when the rename was applied; verify actual state.
       if (await renameAppearedSuccessful(state.cwd, oldName, newName)) {
         verifiedDespiteError = true;
         ok = true;
-        log(`Renombrado verificado en el dispositivo a pesar del error reportado: ${oldPath} -> ${newPath}`, 'warn');
+        log(t('log.renameVerifiedWarn', { old: oldPath, new: newPath }), 'warn');
         await refreshDriveAndList(state.cwd);
       } else {
-        alert(`No se pudo renombrar: ${e.message}`);
+        alert(t('alert.renameFailed', { msg: e.message }));
       }
     } finally {
       setBusy(false);
     }
     if (ok) {
-      if (verifiedDespiteError) setStatus(`Renombrado correctamente: ${newName} (el dispositivo reportó un error, pero el cambio se aplicó).`, 'success');
-      else setStatus(`Renombrado correctamente: ${newName}`, 'success');
+      if (verifiedDespiteError) setStatus(t('msg.renamedOkWarn', { name: newName }), 'success');
+      else setStatus(t('msg.renamedOk', { name: newName }), 'success');
     } else {
-      setStatus(`Error renombrando: ${errMsg}`, 'error');
+      setStatus(t('msg.errorRenaming', { msg: errMsg }), 'error');
     }
     return;
   }
@@ -168,25 +173,25 @@ export async function onRename(oldName) {
 export async function onDelete(name, type) {
   if (state.busy) return;
   const isDir = type === 'dir';
-  if (!confirm(`¿Eliminar ${isDir ? 'la carpeta' : 'el archivo'} "${name}"?${isDir ? '\n(La carpeta debe estar vacía en el dispositivo.)' : ''}`)) return;
+  if (!confirm(isDir ? t('confirm.deleteFolder', { name }) : t('confirm.deleteFile', { name }))) return;
   const base = state.cwd.endsWith('/') ? state.cwd : state.cwd + '/';
   const path = base + name;
   let ok = false; let errMsg = '';
   try {
-    setBusy(true, `Eliminando "${name}"…`);
+    setBusy(true, t('busy.deleting', { name }));
     const res = await state.client.removePath(path);
     if (!res.ok) throw new Error(res.error);
-    log(`Eliminado: ${path}`);
+    log(t('log.deleted', { path }));
     await refreshDriveAndList(state.cwd);
     ok = true;
   } catch (err) {
     errMsg = err.message;
-    log(`Error eliminando: ${err.message}`, 'error');
+    log(t('msg.errorDeleting', { msg: err.message }), 'error');
   } finally {
     setBusy(false);
   }
-  if (ok) setStatus(`Eliminado: ${name}`, 'success');
-  else setStatus(`Error eliminando: ${errMsg}`, 'error');
+  if (ok) setStatus(t('msg.deleted', { name }), 'success');
+  else setStatus(t('msg.errorDeleting', { msg: errMsg }), 'error');
 }
 
 export function onMovePick(name, type) {
@@ -194,9 +199,9 @@ export function onMovePick(name, type) {
   const base = state.cwd.endsWith('/') ? state.cwd : state.cwd + '/';
   const path = base + name;
   state.clipboard = { path, name, type };
-  log(`Preparado para mover: ${path}`);
-  setStatus(`Elemento preparado para mover. Navega al destino y pulsa "Mover aquí".`, 'info');
-  renderPathbar(); // just to be safe
+  log(t('log.preparedMove', { path }));
+  setStatus(t('status.movePrepared'), 'info');
+  renderPathbar();
   setControlsConnected(!!(state.client && state.client.connected));
 }
 
@@ -206,35 +211,34 @@ export async function pasteMove() {
   const srcDir = getParentPath(src);
   const base = state.cwd.endsWith('/') ? state.cwd : state.cwd + '/';
   const dest = base + state.clipboard.name;
-  if (dest === src) { setStatus('El origen y el destino son iguales.', 'warn'); return; }
+  if (dest === src) { setStatus(t('status.sameSrcDest'), 'warn'); return; }
   if (state.clipboard.type === 'dir' && (dest + '/').startsWith(src.endsWith('/') ? src : src + '/')) {
-    alert('No puedes mover una carpeta dentro de sí misma.');
+    alert(t('alert.moveIntoSelf'));
     return;
   }
   const maxPath = state.clipboard.type === 'dir' ? MAX_FOLDER_PATH_BYTES : MAX_FILE_PATH_BYTES;
-  if (utf8Length(dest) > maxPath) { alert(`La ruta de destino es demasiado larga (máx ${maxPath} bytes).`); return; }
+  if (utf8Length(dest) > maxPath) { alert(t('alert.destPathTooLong', { max: maxPath })); return; }
 
   const movingName = state.clipboard.name;
   let ok = false; let errMsg = '';
   let verifiedDespiteError = false;
   try {
-    setBusy(true, `Moviendo "${movingName}"…`);
+    setBusy(true, t('busy.moving', { name: movingName }));
     const res = await state.client.renamePath(src, dest);
     if (!res.ok) throw new Error(res.error);
-    log(`Movido: ${src} -> ${dest}`);
+    log(t('log.moved', { old: src, new: dest }));
     state.clipboard = null;
     await refreshDriveAndList(state.cwd);
     ok = true;
   } catch (err) {
     errMsg = err.message;
-    log(`Error moviendo: ${err.message}`, 'error');
-    // verify: destination exists in cwd and source gone from source dir (same-dir move also covered)
+    log(t('msg.errorMoving', { msg: err.message }), 'error');
     try {
       const destList = await state.client.readFolder(state.cwd);
       const hasDest = destList.ok && (destList.data || []).some(e => e.name === movingName);
       let srcGone = true;
       if (srcDir === state.cwd) {
-        srcGone = !hasDest ? false : true; // same dir rename/move: hasDest means replaced/renamed in place
+        srcGone = !hasDest ? false : true;
       } else {
         const srcList = await state.client.readFolder(srcDir);
         srcGone = srcList.ok ? !(srcList.data || []).some(e => e.name === movingName) : false;
@@ -243,7 +247,7 @@ export async function pasteMove() {
         verifiedDespiteError = true;
         ok = true;
         state.clipboard = null;
-        log(`Movimiento verificado en el dispositivo a pesar del error reportado: ${src} -> ${dest}`, 'warn');
+        log(t('log.moveVerifiedWarn', { src, dest }), 'warn');
         await refreshDriveAndList(state.cwd);
       }
     } catch (_) { /* ignore verification errors */ }
@@ -251,17 +255,17 @@ export async function pasteMove() {
     setBusy(false);
   }
   if (ok) {
-    if (verifiedDespiteError) setStatus(`Movido correctamente: ${movingName} (el dispositivo reportó un error, pero el cambio se aplicó).`, 'success');
-    else setStatus(`Movido correctamente: ${movingName}`, 'success');
+    if (verifiedDespiteError) setStatus(t('msg.movedOkWarn', { name: movingName }), 'success');
+    else setStatus(t('msg.movedOk', { name: movingName }), 'success');
   } else {
-    setStatus(`Error al mover: ${errMsg}`, 'error');
+    setStatus(t('msg.errorMoving', { msg: errMsg }), 'error');
   }
 }
 
 export function cancelMove() {
   state.clipboard = null;
   setControlsConnected(!!(state.client && state.client.connected));
-  setStatus('Movimiento cancelado.', 'info');
+  setStatus(t('status.moveCancelled'), 'info');
 }
 
 async function fetchLatestPixlRelease() {
@@ -282,51 +286,36 @@ async function fetchLatestPixlRelease() {
 export async function updateFirmwareFlow() {
   if (!state.client || !state.client.connected || state.busy) return;
 
-  const currentVer = ui.devVersion.textContent && ui.devVersion.textContent !== '—' ? ui.devVersion.textContent : 'desconocida';
-  setBusy(true, 'Comprobando información de firmware…');
+  const currentVer = ui.devVersion.textContent && ui.devVersion.textContent !== '—' ? ui.devVersion.textContent : (document.documentElement.lang === 'en' ? 'unknown' : 'desconocida');
+  setBusy(true, t('busy.checkingFw'));
   const latest = await fetchLatestPixlRelease();
   setBusy(false);
-  if (state.client?.connected) setStatus('Listo. Puedes subir archivos o carpetas.', 'info');
+  if (state.client?.connected) setStatus(t('status.ready'), 'info');
 
-  let msg = `Actualización de firmware del dispositivo\n\n`;
-  msg += `Versión actual detectada: ${currentVer}\n`;
-  if (latest && latest.tag) {
-    msg += `Última versión publicada (Pixl.js): ${latest.tag}\n`;
-  } else {
-    msg += `No se pudo consultar la última versión automáticamente.\n`;
-  }
-  msg += `\nEl proceso consiste en:\n`;
-  msg += `1) Reiniciar el dispositivo en modo DFU (actualización).\n`;
-  msg += `2) Abrir la herramienta web de DFU y seleccionar el paquete de firmware (.zip) adecuado para tu dispositivo.\n`;
-  msg += `   - Releases de Pixl.js: https://github.com/solosky/pixl.js/releases\n`;
-  msg += `\n¿Quieres poner el dispositivo en modo DFU ahora?`;
+  const latestLine = latest && latest.tag ? t('dfu.latestKnown', { tag: latest.tag }) : t('dfu.latestUnknown');
+  const msg = t('dfu.confirm1', { current: currentVer, latestLine });
 
   if (!confirm(msg)) return;
 
   try {
-    setBusy(true, 'Enviando comando de actualización (DFU)…');
+    setBusy(true, t('busy.sendingDfu'));
     const res = await state.client.enterDfu();
     setBusy(false);
     if (res.ok) {
-      setStatus('Dispositivo en modo DFU. Abre la herramienta de actualización para flashear el firmware.', 'warn');
-      log('Comando DFU enviado correctamente. Dispositivo reiniciando en modo DFU.');
-      const openTool = confirm(
-        `El dispositivo debería estar en modo DFU.\n\n` +
-        `¿Abrir ahora la herramienta web de actualización (Nordic Secure DFU)?\n` +
-        `Allí podrás conectar el dispositivo en modo DFU y seleccionar el archivo .zip del firmware.\n\n` +
-        (latest && latest.url ? `Releases/firmware: ${latest.url}\n\n` : `Releases/firmware: https://github.com/solosky/pixl.js/releases\n\n`) +
-        `Herramienta DFU: https://thegecko.github.io/web-bluetooth-dfu/examples/web.html`
-      );
+      setStatus(t('status.dfuReady'), 'warn');
+      log(t('log.dfuSent'));
+      const url = (latest && latest.url) ? latest.url : 'https://github.com/solosky/pixl.js/releases';
+      const openTool = confirm(t('dfu.confirm2', { url }));
       if (openTool) {
         window.open('https://thegecko.github.io/web-bluetooth-dfu/examples/web.html', '_blank', 'noopener');
       }
     } else {
-      setStatus(`Error al entrar en modo DFU: ${res.error}`, 'error');
-      log(`Error DFU: ${res.error}`, 'error');
+      setStatus(t('status.dfuError', { msg: res.error }), 'error');
+      log(t('status.dfuErrorShort', { msg: res.error }), 'error');
     }
   } catch (err) {
     setBusy(false);
-    setStatus(`Error DFU: ${err.message}`, 'error');
-    log(`Error DFU: ${err.message}`, 'error');
+    setStatus(t('status.dfuErrorShort', { msg: err.message }), 'error');
+    log(t('status.dfuErrorShort', { msg: err.message }), 'error');
   }
 }

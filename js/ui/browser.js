@@ -2,6 +2,7 @@ import { state, ui } from '../state.js';
 import { getParentPath } from '../ble/pixl-client.js';
 import { formatBytes, escapeHtml, escapeAttr } from '../utils.js';
 import { log, setStatus, updateMoveBar } from './status.js';
+import { t } from '../i18n.js';
 
 export function renderDrive() {
   if (!state.drive) {
@@ -15,7 +16,10 @@ export function renderDrive() {
   const pct = totalBytes > 0 ? Math.min(100, (used / totalBytes) * 100) : 0;
   ui.driveLabel.textContent = label ? `${label}:/` : (name || '—');
   ui.driveBar.style.width = `${pct.toFixed(1)}%`;
-  ui.driveMeta.textContent = `${formatBytes(used)} usados de ${formatBytes(totalBytes)} · ${formatBytes(freeBytes)} libres`;
+  const isEn = document.documentElement.lang === 'en';
+  ui.driveMeta.textContent = isEn
+    ? `${formatBytes(used)} used of ${formatBytes(totalBytes)} · ${formatBytes(freeBytes)} free`
+    : `${formatBytes(used)} usados de ${formatBytes(totalBytes)} · ${formatBytes(freeBytes)} libres`;
 }
 
 export function renderPathbar() {
@@ -48,7 +52,7 @@ export function renderFiles() {
   const tbody = ui.fileBody;
   tbody.innerHTML = '';
   if (!state.client || !state.client.connected) {
-    tbody.innerHTML = '<tr><td colspan="4" class="empty">Conecta un dispositivo para ver sus archivos.</td></tr>';
+    tbody.innerHTML = `<tr><td colspan="4" class="empty">${escapeHtml(t('browser.emptyConnect'))}</td></tr>`;
     return;
   }
   const entries = [...state.entries].sort((a, b) => {
@@ -58,7 +62,7 @@ export function renderFiles() {
     return a.name.localeCompare(b.name);
   });
   if (entries.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="4" class="empty">Carpeta vacía.</td></tr>';
+    tbody.innerHTML = `<tr><td colspan="4" class="empty">${escapeHtml(t('browser.emptyFolder'))}</td></tr>`;
     return;
   }
   for (const e of entries) {
@@ -66,13 +70,16 @@ export function renderFiles() {
     const isDir = e.type === 'DIR' || e.type === 'dir';
     const icon = isDir ? '📁' : '📄';
     const size = isDir ? '—' : formatBytes(e.size);
-    const type = isDir ? 'Carpeta' : 'Archivo';
+    const type = isDir ? t('browser.folder') : t('browser.file');
     const etype = isDir ? 'dir' : 'file';
+    const moveTitle = document.documentElement.lang === 'en' ? 'Move' : 'Mover';
+    const renTitle = document.documentElement.lang === 'en' ? 'Rename' : 'Renombrar';
+    const delTitle = document.documentElement.lang === 'en' ? 'Delete' : 'Eliminar';
     const nameCell = `<div class="name-cell"><span class="icon">${icon}</span><span class="name-link ${isDir ? 'dir' : 'file'}" data-type="${etype}" data-name="${escapeAttr(e.name)}">${escapeHtml(e.name)}</span></div>`;
     const actions = `
-      <button class="icon-btn" data-act="move" data-name="${escapeAttr(e.name)}" data-type="${etype}" title="Mover">📦</button>
-      <button class="icon-btn" data-act="rename" data-name="${escapeAttr(e.name)}" title="Renombrar">✏️</button>
-      <button class="icon-btn" data-act="delete" data-name="${escapeAttr(e.name)}" data-type="${etype}" title="Eliminar">🗑️</button>`;
+      <button class="icon-btn" data-act="move" data-name="${escapeAttr(e.name)}" data-type="${etype}" title="${escapeAttr(moveTitle)}">📦</button>
+      <button class="icon-btn" data-act="rename" data-name="${escapeAttr(e.name)}" title="${escapeAttr(renTitle)}">✏️</button>
+      <button class="icon-btn" data-act="delete" data-name="${escapeAttr(e.name)}" data-type="${etype}" title="${escapeAttr(delTitle)}">🗑️</button>`;
     tr.innerHTML = `<td>${nameCell}</td><td class="col-size">${size}</td><td class="col-type">${type}</td><td class="col-actions">${actions}</td>`;
     tbody.appendChild(tr);
   }
@@ -102,7 +109,7 @@ export async function navigateTo(path) {
 export async function refreshDriveAndList(path = state.cwd) {
   if (!state.client || !state.client.connected) return;
   try {
-    ui.fileBody.innerHTML = '<tr><td colspan="4" class="empty">Cargando…</td></tr>';
+    ui.fileBody.innerHTML = `<tr><td colspan="4" class="empty">${escapeHtml(t('browser.loading'))}</td></tr>`;
     const drivesRes = await state.client.listDrives();
     if (drivesRes.ok && drivesRes.data && drivesRes.data.length) {
       const label = state.drive ? state.drive.label : drivesRes.data[0].label;
@@ -119,8 +126,9 @@ export async function refreshDriveAndList(path = state.cwd) {
     renderFiles();
     ui.upBtn.disabled = !state.client.connected || !state.drive || state.cwd === (state.drive.label + ':/');
   } catch (err) {
-    log(`Error al listar ${path || state.cwd || ''}: ${err.message}`, 'error');
-    setStatus(`Error al listar: ${err.message}`, 'error');
+    const p = path || state.cwd || '';
+    log(t('log.errorList', { path: p, msg: err.message }), 'error');
+    setStatus(t('status.listError', { msg: err.message }), 'error');
     ui.fileBody.innerHTML = `<tr><td colspan="4" class="empty">Error: ${escapeHtml(err.message)}</td></tr>`;
   }
 }

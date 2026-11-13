@@ -24,9 +24,9 @@ export function isValidName(name) {
 }
 
 export function pathNameIssues(name, kind = 'file') {
-  if (!isValidName(name)) return 'Nombre vacío o con caracteres no permitidos.';
+  if (!isValidName(name)) return { key: 'modal.nameInvalid' };
   const nb = utf8Length(name);
-  if (nb > MAX_FILE_NAME_BYTES) return `Nombre demasiado largo (${nb}/${MAX_FILE_NAME_BYTES} bytes UTF-8).`;
+  if (nb > MAX_FILE_NAME_BYTES) return { key: 'modal.nameTooLong', params: { n: nb, max: MAX_FILE_NAME_BYTES } };
   return null;
 }
 
@@ -49,19 +49,18 @@ export function joinRemotePath(cwd, segments) {
 export function computePathValidation(cwd, segments, kinds) {
   const safeCwd = cwd || '';
   const base = safeCwd.endsWith('/') ? safeCwd.slice(0, -1) : safeCwd;
-  const segmentHints = segments.map(() => ({ ok: true, message: '' }));
+  const segmentHints = segments.map(() => ({ ok: true, key: 'modal.nameOk', params: {} }));
   let ok = true;
-  let message = 'Ruta correcta.';
 
   for (let i = 0; i < segments.length; i++) {
     const name = segments[i];
     const kind = kinds[i];
     const ni = pathNameIssues(name, kind);
     if (ni) {
-      segmentHints[i] = { ok: false, message: ni };
+      segmentHints[i] = { ok: false, key: ni.key, params: ni.params || {} };
       ok = false;
     } else {
-      segmentHints[i] = { ok: true, message: `Correcto (${utf8Length(name)} B nombre)` };
+      segmentHints[i] = { ok: true, key: 'modal.nameOk', params: { n: utf8Length(name) } };
     }
   }
 
@@ -72,15 +71,12 @@ export function computePathValidation(cwd, segments, kinds) {
     const limit = kind === 'file' ? MAX_FILE_PATH_BYTES : MAX_FOLDER_PATH_BYTES;
     if (utf8Length(partial) > limit) {
       const bytes = utf8Length(partial);
-      segmentHints[i] = { ok: false, message: `Ruta ${kind === 'file' ? 'de archivo' : 'de carpeta'} demasiado larga (${bytes}/${limit} bytes).` };
+      segmentHints[i] = { ok: false, key: 'modal.pathTooLong', params: { kind: kind === 'file' ? 'file' : 'dir', n: bytes, max: limit } };
       ok = false;
     }
   }
 
-  if (ok) message = 'Todos los segmentos y la ruta completa son válidos.';
-  else message = 'Corrige los segmentos marcados en rojo para continuar.';
-
-  return { ok, message, segmentHints, finalPath: fullPath };
+  return { ok, segmentHints, finalPath: fullPath };
 }
 
 export function applySegmentRenamesToTasks(tasks, baseSegs, newSegs) {

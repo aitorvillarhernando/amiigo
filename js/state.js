@@ -14,6 +14,7 @@ export const state = {
 export const ui = {
   supportBadge: el('supportBadge'),
   connectBtn: el('connectBtn'),
+  langSelect: el('langSelect'),
   statusBar: el('statusBar'),
   statusSpinner: el('statusSpinner'),
   statusText: el('statusText'),

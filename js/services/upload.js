@@ -1,6 +1,7 @@
 import { state, ui } from '../state.js';
 import { formatBytes, isSafeFileName } from '../utils.js';
 import { getBaseName, getParentPath } from '../ble/pixl-client.js';
+import { t } from '../i18n.js';
 import { setStatus, log } from '../ui/status.js';
 import { setBusy } from '../ui/busy.js';
 import { createTransferGroup } from '../ui/transfers.js';
@@ -31,7 +32,7 @@ export async function pickMultipleDirectories() {
       }
       throw err;
     }
-    addMore = confirm('¿Añadir otra carpeta a la subida? Pulsa "Aceptar" para elegir otra o "Cancelar" para continuar con las seleccionadas.');
+    addMore = confirm(t('confirm.addMoreFolders'));
   }
   if (!dirs.length) return [];
 
@@ -64,13 +65,13 @@ export async function pickMultipleDirectories() {
 
 export async function uploadTasks(tasks, title) {
   if (!tasks.length) return;
-  setBusy(true, 'Comprobando rutas antes de subir…');
+  setBusy(true, t('status.checkingPaths'));
 
   const cwd = state.cwd || (state.drive ? state.drive.label + ':/' : 'E:/');
   try {
     const resolved = await resolveTasksPaths(tasks, cwd);
     if (!resolved.length) {
-      setStatus('No hay archivos válidos para subir.', 'warn');
+      setStatus(t('status.noFilesToUpload'), 'warn');
       return;
     }
     await uploadResolvedTasks(resolved, cwd, title);
@@ -83,13 +84,13 @@ export async function uploadTasks(tasks, title) {
 export async function uploadResolvedTasks(tasks, cwd, title) {
   // switch from "checking paths" busy label to upload mode (transfers show detailed progress)
   if (ui.statusSpinner) ui.statusSpinner.classList.add('hidden');
-  setStatus('Subiendo archivos…', 'info');
+  setStatus(t('status.uploading'), 'info');
   state.abortController = new AbortController();
   const group = createTransferGroup(title);
-  group.setState('Subiendo…', 't-run');
+  group.setState(t('transfer.uploading'), 't-run');
 
   let done = 0, failed = 0, totalBytes = 0, sentBytes = 0;
-  for (const t of tasks) totalBytes += t.file.size;
+  for (const task of tasks) totalBytes += task.file.size;
 
   try {
     for (let i = 0; i < tasks.length; i++) {
@@ -99,8 +100,8 @@ export async function uploadResolvedTasks(tasks, cwd, title) {
       const relLabel = task.relativePath || file.name;
 
       const item = group.createFileItem(relLabel);
-      item.setState('Subiendo…', 't-run');
-      log(`Subiendo ${relLabel} -> ${remotePath}`);
+      item.setState(t('transfer.uploading'), 't-run');
+      log(t('log.uploading', { rel: relLabel, remote: remotePath }));
 
       try {
         const parentDir = getParentPath(remotePath);
@@ -110,51 +111,60 @@ export async function uploadResolvedTasks(tasks, cwd, title) {
           const pctFile = total ? (written / total) * 100 : 100;
           item.setProgress(pctFile, `${formatBytes(written)} / ${formatBytes(total || written)}`);
           const overall = totalBytes ? ((sentBytes + written) / totalBytes) * 100 : ((i) / tasks.length) * 100;
-          group.setProgress(overall, `${done}/${tasks.length} completados · ${formatBytes(sentBytes + written)} / ${formatBytes(totalBytes)}`);
+          group.setProgress(overall, t('transfer.progressOverall', { done, total: tasks.length, sent: formatBytes(sentBytes + written), totalBytes: formatBytes(totalBytes) }));
         }, state.abortController.signal);
 
         sentBytes += file.size;
-        item.setProgress(100, 'Verificando…');
+        item.setProgress(100, t('transfer.verifying'));
 
         const name = getBaseName(remotePath);
         const list = await state.client.readFolder(parentDir);
-        if (!list.ok) throw new Error(`Subido, pero no se pudo verificar: ${list.error}`);
+        if (!list.ok) {
+          const msg = document.documentElement.lang === 'en'
+            ? `Uploaded, but could not verify: ${list.error}`
+            : `Subido, pero no se pudo verificar: ${list.error}`;
+          throw new Error(msg);
+        }
         const found = (list.data || []).find(e => (e.type === 'FILE' || e.type === 'file') && e.name === name);
-        if (!found) throw new Error('Subido, pero el archivo no aparece en el dispositivo.');
+        if (!found) {
+          throw new Error(document.documentElement.lang === 'en' ? 'Uploaded, but the file does not appear on the device.' : 'Subido, pero el archivo no aparece en el dispositivo.');
+        }
         if (typeof file.size === 'number' && found.size !== file.size) {
-          throw new Error(`Verificación fallida: tamaño local ${file.size} B, remoto ${found.size} B.`);
+          throw new Error(document.documentElement.lang === 'en'
+            ? `Verification failed: local size ${file.size} B, remote ${found.size} B.`
+            : `Verificación fallida: tamaño local ${file.size} B, remoto ${found.size} B.`);
         }
 
-        item.setProgress(100, `OK · ${formatBytes(file.size)} verificado`);
-        item.setState('Verificado', 't-ok');
-        log(`Verificado ${remotePath} (${file.size} B)`, 'info');
+        item.setProgress(100, t('transfer.verifiedMeta', { size: formatBytes(file.size) }));
+        item.setState(t('transfer.verified'), 't-ok');
+        log(t('log.verified', { path: remotePath, size: file.size }), 'info');
         done++;
       } catch (err) {
         failed++;
-        item.setState('Error', 't-err');
+        item.setState(t('transfer.error'), 't-err');
         item.setProgress(100, err.message);
-        log(`Fallo en ${relLabel}: ${err.message}`, 'error');
+        log(t('log.failUpload', { rel: relLabel, msg: err.message }), 'error');
       }
 
       const overall = totalBytes ? (sentBytes / totalBytes) * 100 : ((i + 1) / tasks.length) * 100;
-      group.setProgress(overall, `${done}/${tasks.length} completados · ${failed} fallidos · ${formatBytes(sentBytes)} / ${formatBytes(totalBytes)}`);
+      group.setProgress(overall, t('transfer.progressOverallFail', { done, total: tasks.length, fail: failed, sent: formatBytes(sentBytes), totalBytes: formatBytes(totalBytes) }));
     }
 
     if (failed === 0) {
-      group.setState('Completado y verificado', 't-ok');
-      setStatus(`Subida completada: ${done} archivo(s) verificados.`, 'success');
+      group.setState(t('transfer.completed'), 't-ok');
+      setStatus(t('status.uploadComplete', { n: done }), 'success');
     } else if (done > 0) {
-      group.setState(`Parcial: ${done} ok, ${failed} fallidos`, 't-warn');
-      setStatus(`Subida parcial: ${done} verificados, ${failed} con error.`, 'warn');
+      group.setState(t('transfer.partial', { ok: done, fail: failed }), 't-warn');
+      setStatus(t('status.uploadPartial', { ok: done, fail: failed }), 'warn');
     } else {
-      group.setState('Fallida', 't-err');
-      setStatus('La subida ha fallado.', 'error');
+      group.setState(t('transfer.failed'), 't-err');
+      setStatus(t('status.uploadFailed'), 'error');
     }
 
     await refreshDriveAndList(cwd);
   } catch (err) {
-    group.setState('Interrumpida', 't-err');
-    log(`Subida interrumpida: ${err.message}`, 'error');
-    setStatus(`Subida interrumpida: ${err.message}`, 'error');
+    group.setState(t('transfer.interrupted'), 't-err');
+    log(t('log.uploadInterrupted', { msg: err.message }), 'error');
+    setStatus(t('status.uploadInterrupted', { msg: err.message }), 'error');
   }
 }

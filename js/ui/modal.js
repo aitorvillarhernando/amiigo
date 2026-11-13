@@ -1,5 +1,15 @@
-import { state, ui } from '../state.js';
+import { ui } from '../state.js';
 import { buildSegmentsForTask, computePathValidation, joinRemotePath, applySegmentRenamesToTasks } from '../utils.js';
+import { t } from '../i18n.js';
+
+function hintText(sh) {
+  if (!sh) return '';
+  if (sh.key === 'modal.pathTooLong') {
+    const kindLabel = sh.params.kind === 'file' ? t('modal.pathKindFile') : t('modal.pathKindDir');
+    return t('modal.pathTooLong', { kind: kindLabel, n: sh.params.n, max: sh.params.max });
+  }
+  return t(sh.key, sh.params || {});
+}
 
 export function openPathModal(task, cwd, relPath) {
   return new Promise((resolve) => {
@@ -12,20 +22,23 @@ export function openPathModal(task, cwd, relPath) {
       currentSegs.forEach((seg, i) => {
         const row = document.createElement('div');
         row.className = 'segment-row';
-        const kindLabel = kinds[i] === 'file' ? 'Archivo' : `Carpeta ${i + 1}`;
+        const kindLabel = kinds[i] === 'file' ? t('modal.segmentFile') : t('modal.segmentDir', { n: i + 1 });
         row.innerHTML = `
-          <div class="segment-label"><strong>${kindLabel}</strong><span>Segmento ${i + 1}</span></div>
+          <div class="segment-label"><strong></strong><span></span></div>
           <div class="segment-field">
-            <input type="text" data-idx="${i}" value="" aria-label="${kindLabel}">
+            <input type="text" data-idx="${i}" value="" aria-label="">
             <div class="segment-hint"></div>
           </div>`;
+        row.querySelector('.segment-label strong').textContent = kindLabel;
+        row.querySelector('.segment-label span').textContent = t('modal.segmentN', { n: i + 1 });
         const input = row.querySelector('input');
+        input.setAttribute('aria-label', kindLabel);
         const hint = row.querySelector('.segment-hint');
         input.value = seg;
-        const sh = v.segmentHints[i] || { ok: true, message: '' };
+        const sh = v.segmentHints[i] || { ok: true, key: 'modal.nameOk', params: { n: 0 } };
         input.classList.toggle('valid', !!sh.ok);
         input.classList.toggle('invalid', !sh.ok);
-        hint.textContent = sh.message || '';
+        hint.textContent = hintText(sh);
         hint.className = 'segment-hint ' + (sh.ok ? 'ok' : 'err');
         input.addEventListener('input', () => {
           currentSegs[i] = input.value;
@@ -33,8 +46,8 @@ export function openPathModal(task, cwd, relPath) {
         });
         ui.pathModalSegments.appendChild(row);
       });
-      ui.pathModalDesc.textContent = `La ruta o algún nombre del elemento seleccionado no cumple los límites del dispositivo.\n\nElemento: ${relPath}`;
-      ui.pathModalFeedback.textContent = v.message;
+      ui.pathModalDesc.textContent = t('modal.desc', { item: relPath });
+      ui.pathModalFeedback.textContent = v.ok ? t('modal.okMsg') : t('modal.errMsg');
       ui.pathModalFeedback.className = 'modal-feedback ' + (v.ok ? 'ok' : 'err');
       ui.pathModalPreview.textContent = v.finalPath;
       ui.pathModalOk.disabled = !v.ok;

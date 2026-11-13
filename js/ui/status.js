@@ -1,4 +1,5 @@
 import { state, ui } from '../state.js';
+import { t } from '../i18n.js';
 
 export function log(msg, level = 'info') {
   const ts = new Date().toLocaleTimeString();
@@ -19,7 +20,7 @@ export function setStatus(text, kind = 'info') {
 
 export function setControlsConnected(connected) {
   const on = !!connected;
-  ui.connectBtn.textContent = on ? 'Desconectar' : 'Conectar';
+  ui.connectBtn.textContent = on ? t('header.disconnect') : t('header.connect');
   ui.refreshBtn.disabled = !on || state.busy;
   ui.dfuBtn.disabled = !on || state.busy;
   ui.upBtn.disabled = !on || state.busy;
@@ -27,7 +28,7 @@ export function setControlsConnected(connected) {
   ui.fileInput.disabled = !on || state.busy;
   ui.dirInput.disabled = !on || state.busy;
   ui.uploadMultiDirBtn.disabled = !on || state.busy || !(window.showDirectoryPicker);
-  ui.devStatus.textContent = on ? 'Conectado' : 'Desconectado';
+  ui.devStatus.textContent = on ? t('device.connected') : t('device.disconnected');
   if (!on) {
     ui.devName.textContent = '—';
     ui.devVersion.textContent = '—';

@@ -1,6 +1,8 @@
 // Pixl.js / Allmiibo BLE VFS client (Web Bluetooth)
 // Protocol based on Pixl.js BLE protocol (NUS + VFS commands).
 
+import { t } from '../i18n.js';
+
 const NUS_SERVICE_UUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
 const NUS_CHAR_TX_UUID = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"; // write
 const NUS_CHAR_RX_UUID = "6e400003-b5a3-f393-e0a9-e50e24dcca9e"; // notify
@@ -151,8 +153,8 @@ export class PixlClient {
   }
 
   async connect() {
-    if (!navigator.bluetooth) throw new Error("Web Bluetooth no está disponible en este navegador.");
-    this._log("Solicitando dispositivo BLE...");
+    if (!navigator.bluetooth) throw new Error(document.documentElement.lang === 'en' ? 'Web Bluetooth is not available in this browser.' : 'Web Bluetooth no está disponible en este navegador.');
+    this._log(document.documentElement.lang === 'en' ? 'Requesting BLE device...' : 'Solicitando dispositivo BLE...');
     const device = await navigator.bluetooth.requestDevice({
       filters: [{ services: [NUS_SERVICE_UUID] }],
       optionalServices: [NUS_SERVICE_UUID],
@@ -184,7 +186,7 @@ export class PixlClient {
       throw err;
     }
     this.createdFolders.clear();
-    this._log(`Conectado a ${device.name || "dispositivo BLE"}.`);
+    this._log(document.documentElement.lang === 'en' ? `Connected to ${device.name || "BLE device"}.` : `Conectado a ${device.name || "dispositivo BLE"}.`);
 
     const savedLog = this._log;
     this._log = () => {};
@@ -196,7 +198,7 @@ export class PixlClient {
       this._log = savedLog;
       this._expectErrorResponses = false;
     }
-    this._log(`Tamaño de bloque de escritura: ${this.maxChunkSize} B`);
+    this._log(document.documentElement.lang === 'en' ? `Write chunk size: ${this.maxChunkSize} B` : `Tamaño de bloque de escritura: ${this.maxChunkSize} B`);
   }
 
   async _negotiateChunkSize() {
@@ -526,13 +528,17 @@ export class PixlClient {
               if (smaller < chunkSize) {
                 chunkSize = smaller;
                 this.maxChunkSize = Math.min(this.maxChunkSize || chunkSize, chunkSize);
-                this._log(`Reduciendo tamaño de bloque a ${chunkSize} B para mejorar estabilidad en ${remotePath}...`);
+                this._log(document.documentElement.lang === 'en'
+                  ? `Reducing chunk size to ${chunkSize} B to improve stability for ${remotePath}...`
+                  : `Reduciendo tamaño de bloque a ${chunkSize} B para mejorar estabilidad en ${remotePath}...`);
                 lastErr = new Error(`${msg} (reintentando con bloque de ${chunkSize} B)`);
                 break; // rebuild chunk with new size in outer loop
               }
             }
             const backoff = (isTimeout || isCmdFail ? 1200 : 700) * attempt;
-            this._log(`Reintentando chunk en ${remotePath} (offset ${offset}, intento ${attempt}/${maxRetries})...`);
+            this._log(document.documentElement.lang === 'en'
+              ? `Retrying chunk in ${remotePath} (offset ${offset}, attempt ${attempt}/${maxRetries})...`
+              : `Reintentando chunk en ${remotePath} (offset ${offset}, intento ${attempt}/${maxRetries})...`);
             await new Promise(r => setTimeout(r, backoff));
           }
         }

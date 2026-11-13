@@ -1,5 +1,5 @@
 import { ui } from '../state.js';
-import { formatBytes, escapeHtml } from '../utils.js';
+import { t } from '../i18n.js';
 
 export function removeEmptyTransferNote() {
   const empty = ui.transferList.querySelector('.empty');
@@ -15,13 +15,14 @@ export function createTransferGroup(title) {
     <div class="transfer-group-header">
       <div class="transfer-top">
         <div class="transfer-name"></div>
-        <div class="transfer-state t-run">En cola…</div>
+        <div class="transfer-state t-run"></div>
       </div>
       <div class="progress"><div class="progress-bar overall-bar" style="width:0%"></div></div>
       <div class="transfer-meta overall-meta"></div>
     </div>
     <div class="transfer-files"></div>`;
   group.querySelector('.transfer-name').textContent = title;
+  group.querySelector('.transfer-group-header .transfer-state').textContent = t('transfer.queued');
   ui.transferList.prepend(group);
   const overallState = group.querySelector('.transfer-group-header .transfer-state');
   const overallBar = group.querySelector('.overall-bar');
@@ -50,11 +51,12 @@ export function createTransferGroup(title) {
       item.innerHTML = `
         <div class="transfer-top">
           <div class="transfer-name file-name"></div>
-          <div class="transfer-state file-state t-run">En cola…</div>
+          <div class="transfer-state file-state t-run"></div>
         </div>
         <div class="progress progress-sm"><div class="progress-bar file-bar" style="width:0%"></div></div>
         <div class="transfer-meta file-meta"></div>`;
       item.querySelector('.file-name').textContent = name;
+      item.querySelector('.file-state').textContent = t('transfer.queued');
       filesWrap.appendChild(item);
       const st = item.querySelector('.file-state');
       const bar = item.querySelector('.file-bar');
@@ -70,17 +72,13 @@ export function createTransferGroup(title) {
 
 export function clearCompletedTransfers() {
   const groups = ui.transferList.querySelectorAll('.transfer-group');
-  let removedAny = false;
   groups.forEach(g => {
-    if (g.dataset.status !== 'active') { g.remove(); removedAny = true; }
+    if (g.dataset.status !== 'active') { g.remove(); }
   });
-  if (removedAny) {
-    // any active remain? fine
-  }
   const hasActive = ui.transferList.querySelector('.transfer-group[data-status="active"]');
   const hasAnything = ui.transferList.querySelector('.transfer-group');
   if (!hasAnything && !hasActive) {
-    ui.transferList.innerHTML = '<div class="empty muted">No hay transferencias en curso.</div>';
+    ui.transferList.innerHTML = `<div class="empty muted">${t('transfers.empty')}</div>`;
   }
 }
 
@@ -91,11 +89,12 @@ export function createTransferItem(name) {
   div.innerHTML = `
     <div class="transfer-top">
       <div class="transfer-name"></div>
-      <div class="transfer-state t-run">En cola…</div>
+      <div class="transfer-state t-run"></div>
     </div>
     <div class="progress"><div class="progress-bar" style="width:0%"></div></div>
     <div class="transfer-meta"></div>`;
   div.querySelector('.transfer-name').textContent = name;
+  div.querySelector('.transfer-state').textContent = t('transfer.queued');
   ui.transferList.prepend(div);
   return {
     setProgress(pct, meta = '') {
