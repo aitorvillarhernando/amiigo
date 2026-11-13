@@ -124,7 +124,8 @@ class Cursor {
 }
 
 export class PixlClient {
-  constructor(logFn = () => {}) {
+  constructor(options = () => {}) {
+    const logFn = typeof options === 'function' ? options : (options && typeof options.log === 'function' ? options.log : () => {});
     this._log = logFn;
     this.device = null;
     this.txChar = null;
@@ -376,7 +377,7 @@ export class PixlClient {
   }
 
   async readFolder(path) {
-    const r = await this._sendCommand(0x16, encodeString(path));
+    const r = await this._sendCommand(0x16, encodeString(path), 30000);
     if (r.status !== 0) return { ok: false, error: this._vfsError(r.status), data: null };
     const c = new Cursor(r.payload);
     const entries = [];
@@ -396,21 +397,21 @@ export class PixlClient {
 
   async createFolder(path) {
     validateRemotePath(path, "folder");
-    const r = await this._sendCommand(0x17, encodeString(path), 30000);
+    const r = await this._sendCommand(0x17, encodeString(path), 60000);
     if (r.status !== 0) return { ok: false, error: this._vfsError(r.status) };
     return { ok: true, error: null };
   }
 
   async removePath(path) {
     // Removing directories/items can be slow on some devices
-    const r = await this._sendCommand(0x18, encodeString(path), 30000);
+    const r = await this._sendCommand(0x18, encodeString(path), 60000);
     if (r.status !== 0) return { ok: false, error: this._vfsError(r.status) };
     return { ok: true, error: null };
   }
 
   async renamePath(oldPath, newPath) {
-    // Renaming directories on device storage can take longer on some firmwares/devices
-    const r = await this._sendCommand(0x19, concatBytes(encodeString(oldPath), encodeString(newPath)), 45000);
+    // Renaming/moving directories on device storage can take longer on some firmwares/devices
+    const r = await this._sendCommand(0x19, concatBytes(encodeString(oldPath), encodeString(newPath)), 90000);
     if (r.status !== 0) return { ok: false, error: this._vfsError(r.status) };
     return { ok: true, error: null };
   }
@@ -419,20 +420,20 @@ export class PixlClient {
     const modeMap = { r: 0x08, w: 0x16 };
     if (!(mode in modeMap)) throw new Error(`Modo desconocido "${mode}"`);
     const payload = concatBytes(encodeString(path), Uint8Array.of(modeMap[mode]));
-    const r = await this._sendCommand(0x12, payload);
+    const r = await this._sendCommand(0x12, payload, 30000);
     if (r.status !== 0) return { ok: false, error: this._vfsError(r.status), data: null };
     const c = new Cursor(r.payload);
     return { ok: true, error: null, data: c.u8() };
   }
 
   async writeFileChunk(fileId, chunk) {
-    const r = await this._sendCommand(0x15, concatBytes(Uint8Array.of(fileId), chunk), 30000);
+    const r = await this._sendCommand(0x15, concatBytes(Uint8Array.of(fileId), chunk), 60000);
     if (r.status !== 0) return { ok: false, error: this._vfsError(r.status) };
     return { ok: true, error: null };
   }
 
   async closeFile(fileId) {
-    const r = await this._sendCommand(0x13, Uint8Array.of(fileId));
+    const r = await this._sendCommand(0x13, Uint8Array.of(fileId), 30000);
     if (r.status !== 0) return { ok: false, error: this._vfsError(r.status) };
     return { ok: true, error: null };
   }

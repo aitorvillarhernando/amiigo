@@ -14,7 +14,8 @@ Inspirada en `bt.allmiibo.com`, pero con una interfaz más clara, subida de arch
 - **Corrección interactiva de rutas/nombres demasiado largos**: si algún archivo o carpeta supera los límites del protocolo, la app muestra un aviso para que lo renombres manualmente, indicando en **verde** cuando la ruta queda correcta antes de aplicar el cambio (archivo/carpeta por archivo/carpeta). Puedes omitir elementos concretos si lo prefieres.
 - **Verificación de subida**: tras cada archivo se vuelve a listar la carpeta remota y se comprueba que el archivo existe con el tamaño esperado.
 - **Gestión tipo gestor de archivos**: crear, **renombrar**, **mover** (cortar y pegar en otra carpeta) y eliminar archivos/carpetas directamente en el dispositivo, con validaciones de ruta/nombre y comprobaciones de seguridad (p. ej. no mover una carpeta dentro de sí misma).
-- **Indicadores de progreso** por archivo y global, registro de actividad e información de almacenamiento.
+- **Actualización de firmware (DFU)**: envía el comando DFU al dispositivo y ofrece abrir la herramienta web de actualización con referencia a la versión detectada/publicada.
+- **Indicadores de progreso** por archivo y global, spinner/estado de ocupado en operaciones (crear/renombrar/mover/eliminar), registro de actividad e información de almacenamiento.
 
 ## Requisitos
 
@@ -49,9 +50,12 @@ Si hay discrepancia o el archivo no aparece, la transferencia se marca como fall
 ## Estructura del proyecto
 
 - `index.html` — interfaz de usuario.
-- `styles.css` — estilos.
-- `pixl-client.js` — cliente BLE/protocolo Pixl.js (conexión, comandos VFS, chunking, subida).
-- `app.js` — lógica de la aplicación y orquestación de UI/transferencias.
+- `css/` — estilos divididos por responsabilidad (`base.css`, `layout.css`, `components.css`, `modal.css`).
+- `js/ble/pixl-client.js` — cliente BLE/protocolo Pixl.js (conexión, comandos VFS, chunking, subida).
+- `js/constants.js`, `js/state.js`, `js/utils.js` — constantes, estado/DOM y utilidades compartidas.
+- `js/ui/` — módulos de interfaz (estado/busy, explorador, transferencias, modal de rutas).
+- `js/services/` — lógica de dispositivo y subida/verificación.
+- `js/main.js` — punto de entrada y cableado de eventos.
 
 ## Limitaciones conocidas
 

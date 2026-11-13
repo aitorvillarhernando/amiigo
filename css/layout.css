@@ -1,0 +1,15 @@
+.app { max-width: 1200px; margin: 0 auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+.header { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.brand { display: flex; align-items: center; gap: 14px; }
+.header-actions { display: flex; align-items: center; gap: 10px; }
+.main { display: grid; grid-template-columns: 320px 1fr; gap: 16px; align-items: start; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.toolbar-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.transfers-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+
+@media (max-width: 900px) {
+  .main { grid-template-columns: 1fr; }
+  .app { padding: 12px; }
+  .header { align-items: flex-start; }
+  .header-actions { width: 100%; justify-content: space-between; }
+}

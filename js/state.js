@@ -1,0 +1,52 @@
+export const el = (id) => document.getElementById(id);
+
+export const state = {
+  client: null,
+  drive: null,       // {label,name,totalBytes,freeBytes}
+  cwd: '',           // e.g. E:/
+  entries: [],
+  busy: false,
+  busyLabel: '',
+  abortController: null,
+  clipboard: null,   // {path,name,type} for move
+};
+
+export const ui = {
+  supportBadge: el('supportBadge'),
+  connectBtn: el('connectBtn'),
+  statusBar: el('statusBar'),
+  statusSpinner: el('statusSpinner'),
+  statusText: el('statusText'),
+  devStatus: el('devStatus'),
+  devName: el('devName'),
+  devVersion: el('devVersion'),
+  devAddr: el('devAddr'),
+  driveLabel: el('driveLabel'),
+  driveBar: el('driveBar'),
+  driveMeta: el('driveMeta'),
+  refreshBtn: el('refreshBtn'),
+  dfuBtn: el('dfuBtn'),
+  pathbar: el('pathbar'),
+  upBtn: el('upBtn'),
+  mkdirBtn: el('mkdirBtn'),
+  fileInput: el('fileInput'),
+  dirInput: el('dirInput'),
+  uploadFilesLabel: el('uploadFilesLabel'),
+  uploadDirLabel: el('uploadDirLabel'),
+  uploadMultiDirBtn: el('uploadMultiDirBtn'),
+  fileBody: el('fileBody'),
+  transferList: el('transferList'),
+  clearTransfersBtn: el('clearTransfersBtn'),
+  log: el('log'),
+  moveBar: el('moveBar'),
+  moveName: el('moveName'),
+  pasteMoveBtn: el('pasteMoveBtn'),
+  cancelMoveBtn: el('cancelMoveBtn'),
+  pathModal: el('pathModal'),
+  pathModalDesc: el('pathModalDesc'),
+  pathModalSegments: el('pathModalSegments'),
+  pathModalFeedback: el('pathModalFeedback'),
+  pathModalPreview: el('pathModalPreview'),
+  pathModalSkip: el('pathModalSkip'),
+  pathModalOk: el('pathModalOk'),
+};
