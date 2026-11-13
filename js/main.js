@@ -94,7 +94,14 @@ ui.pasteMoveBtn.addEventListener('click', pasteMove);
 ui.cancelMoveBtn.addEventListener('click', cancelMove);
 ui.dfuBtn.addEventListener('click', updateFirmwareFlow);
 
+function initLocalOnlyLinks() {
+  const isLocal = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);
+  const driveItem = document.getElementById('localDriveSourceItem');
+  if (driveItem) driveItem.style.display = isLocal ? '' : 'none';
+}
+
 // Init
+initLocalOnlyLinks();
 initBluetoothSupport();
 renderPathbar();
 renderFiles();

@@ -41,6 +41,7 @@ h1 { margin: 0; font-size: 1.6rem; line-height: 1.1; }
 .help li { margin: 4px 0; }
 .help a { color: var(--info); text-decoration: none; }
 .help a:hover { text-decoration: underline; }
+.support-footer-btn:hover { transform: translateY(-1px); }
 
 .btn {
   appearance: none; border: 1px solid var(--border); background: #162033; color: var(--text);

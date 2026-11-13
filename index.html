@@ -63,7 +63,7 @@
             <li data-i18n="help.li2">En el dispositivo, entra al modo de transferencia de archivos por Bluetooth.</li>
             <li data-i18n="help.li3">La verificación tras la subida compara el tamaño reportado por el dispositivo con el archivo local.</li>
             <li data-i18n="help.li4">Para mover: pulsa "Mover" (📦) en un elemento, navega a la carpeta destino y usa "Mover aquí".</li>
-            <li class="muted"><span data-i18n="help.source">Fuente de .bin:</span> <a href="https://drive.google.com/drive/folders/1-kd-PpAzqvOhgiFTymWSQXdfWGlZiAuP" target="_blank" rel="noopener noreferrer" data-i18n="help.sourceLink">Google Drive (colección)</a></li>
+            <li id="localDriveSourceItem" class="muted"><span data-i18n="help.source">Fuente de .bin:</span> <a href="https://drive.google.com/drive/folders/1-kd-PpAzqvOhgiFTymWSQXdfWGlZiAuP" target="_blank" rel="noopener noreferrer" data-i18n="help.sourceLink">Google Drive (colección)</a></li>
           </ul>
         </details>
       </aside>
@@ -127,6 +127,19 @@
         <pre id="log" class="log"></pre>
       </details>
     </section>
+    <footer class="support-footer" aria-label="Support">
+      <div class="support-footer-inner">
+        <div class="support-footer-icon" aria-hidden="true">☕</div>
+        <div class="support-footer-text">
+          <h2 data-i18n="footer.supportTitle">¿Te ha sido útil Amiibo Amigo?</h2>
+          <p data-i18n="footer.supportCopy">Si esta herramienta te ha ayudado a gestionar tus archivos, puedes invitarme a un café para apoyar su mantenimiento y futuras mejoras.</p>
+        </div>
+        <a href="https://ko-fi.com/aitorvillarhernando" target="_blank" rel="noopener noreferrer" class="btn btn-primary support-footer-btn">
+          <span data-i18n="footer.supportButton">Invítame a un café</span>
+          <span aria-hidden="true">↗</span>
+        </a>
+      </div>
+    </footer>
   </div>
 
   <div id="pathModal" class="modal hidden" aria-hidden="true">
