@@ -102,14 +102,6 @@ function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
-function setBusy(busy) {
-  state.busy = !!busy;
-  document.body.classList.toggle('app-busy', state.busy);
-  setControlsConnected(!!(state.client && state.client.connected));
-  renderFiles();
-  renderPathbar();
-}
-
 function setControlsConnected(connected) {
   ui.connectBtn.textContent = connected ? 'Desconectar' : 'Conectar';
   const dis = !connected || state.busy;
@@ -985,15 +977,70 @@ ui.uploadMultiDirBtn.addEventListener('click', async () => {
   }
 });
 
-ui.dfuBtn.addEventListener('click', async () => {
-  if (!state.client || !state.client.connected) return;
-  if (!confirm('¿Reiniciar el dispositivo en modo DFU (actualización de firmware)?\nSe desconectará del modo actual.')) return;
+async function fetchLatestPixlRelease() {
   try {
+    const resp = await fetch('https://api.github.com/repos/solosky/pixl.js/releases/latest', {
+      headers: { 'Accept': 'application/vnd.github+json' }
+    });
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    const tag = data.tag_name || data.name || '';
+    const url = data.html_url || 'https://github.com/solosky/pixl.js/releases';
+    return { tag, url };
+  } catch (_) {
+    return null;
+  }
+}
+
+ui.dfuBtn.addEventListener('click', async () => {
+  if (!state.client || !state.client.connected || state.busy) return;
+
+  const currentVer = ui.devVersion.textContent && ui.devVersion.textContent !== '—' ? ui.devVersion.textContent : 'desconocida';
+  setBusy(true, 'Comprobando información de firmware…');
+  const latest = await fetchLatestPixlRelease();
+  setBusy(false);
+  if (state.client?.connected) setStatus('Listo. Puedes subir archivos o carpetas.', 'info');
+
+  let msg = `Actualización de firmware del dispositivo\n\n`;
+  msg += `Versión actual detectada: ${currentVer}\n`;
+  if (latest && latest.tag) {
+    msg += `Última versión publicada (Pixl.js): ${latest.tag}\n`;
+  } else {
+    msg += `No se pudo consultar la última versión automáticamente.\n`;
+  }
+  msg += `\nEl proceso consiste en:\n`;
+  msg += `1) Reiniciar el dispositivo en modo DFU (actualización).\n`;
+  msg += `2) Abrir la herramienta web de DFU y seleccionar el paquete de firmware (.zip) adecuado para tu dispositivo.\n`;
+  msg += `   - Releases de Pixl.js: https://github.com/solosky/pixl.js/releases\n`;
+  msg += `\n¿Quieres poner el dispositivo en modo DFU ahora?`;
+
+  if (!confirm(msg)) return;
+
+  try {
+    setBusy(true, 'Enviando comando de actualización (DFU)…');
     const res = await state.client.enterDfu();
-    if (res.ok) setStatus('Comando DFU enviado. El dispositivo puede reiniciarse.', 'warn');
-    else setStatus(`Error DFU: ${res.error}`, 'error');
+    setBusy(false);
+    if (res.ok) {
+      setStatus('Dispositivo en modo DFU. Abre la herramienta de actualización para flashear el firmware.', 'warn');
+      log('Comando DFU enviado correctamente. Dispositivo reiniciando en modo DFU.');
+      const openTool = confirm(
+        `El dispositivo debería estar en modo DFU.\n\n` +
+        `¿Abrir ahora la herramienta web de actualización (Nordic Secure DFU)?\n` +
+        `Allí podrás conectar el dispositivo en modo DFU y seleccionar el archivo .zip del firmware.\n\n` +
+        (latest && latest.url ? `Releases/firmware: ${latest.url}\n\n` : `Releases/firmware: https://github.com/solosky/pixl.js/releases\n\n`) +
+        `Herramienta DFU: https://thegecko.github.io/web-bluetooth-dfu/examples/web.html`
+      );
+      if (openTool) {
+        window.open('https://thegecko.github.io/web-bluetooth-dfu/examples/web.html', '_blank', 'noopener');
+      }
+    } else {
+      setStatus(`Error al entrar en modo DFU: ${res.error}`, 'error');
+      log(`Error DFU: ${res.error}`, 'error');
+    }
   } catch (err) {
+    setBusy(false);
     setStatus(`Error DFU: ${err.message}`, 'error');
+    log(`Error DFU: ${err.message}`, 'error');
   }
 });
 
