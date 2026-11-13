@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Amiibo Amigo</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="brand">
+        <div class="logo" aria-hidden="true">AA</div>
+        <div>
+          <h1>Amiibo Amigo</h1>
+          <p class="subtitle">Gestor Bluetooth para simuladores NFC (Pixl.js / Allmiibo)</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <span id="supportBadge" class="badge badge-muted">Comprobando Bluetooth…</span>
+        <button id="connectBtn" class="btn btn-primary">Conectar</button>
+      </div>
+    </header>
+
+    <section id="statusBar" class="status status-info" role="status" aria-live="polite">
+      Listo. Conecta tu dispositivo en modo transferencia BLE.
+    </section>
+
+    <main class="main">
+      <aside class="panel device-panel">
+        <h2>Dispositivo</h2>
+        <div class="kv"><span>Estado</span><strong id="devStatus">Desconectado</strong></div>
+        <div class="kv"><span>Nombre</span><strong id="devName">—</strong></div>
+        <div class="kv"><span>Versión FW</span><strong id="devVersion">—</strong></div>
+        <div class="kv"><span>Dirección BLE</span><strong id="devAddr">—</strong></div>
+
+        <div class="drive-box">
+          <div class="drive-head">
+            <span>Almacenamiento</span>
+            <strong id="driveLabel">—</strong>
+          </div>
+          <div class="progress"><div id="driveBar" class="progress-bar" style="width:0%"></div></div>
+          <div class="drive-meta" id="driveMeta">—</div>
+        </div>
+
+        <div class="actions-stack">
+          <button id="refreshBtn" class="btn" disabled>Actualizar</button>
+          <button id="dfuBtn" class="btn btn-ghost" disabled title="Reiniciar en modo DFU">Modo DFU</button>
+        </div>
+
+        <details class="help">
+          <summary>Ayuda rápida</summary>
+          <ul>
+            <li>Usa Chrome, Edge u otro navegador compatible con Web Bluetooth.</li>
+            <li>En el dispositivo, entra al modo de transferencia de archivos por Bluetooth.</li>
+            <li>La verificación tras la subida compara el tamaño reportado por el dispositivo con el archivo local.</li>
+            <li>Para mover: pulsa "Mover" (📦) en un elemento, navega a la carpeta destino y usa "Mover aquí".</li>
+          </ul>
+        </details>
+      </aside>
+
+      <section class="panel browser-panel">
+        <div class="toolbar">
+          <div class="pathbar" id="pathbar" aria-label="Ruta actual"></div>
+          <div class="toolbar-actions">
+            <button id="upBtn" class="btn btn-sm" disabled title="Subir nivel">↑ Arriba</button>
+            <button id="mkdirBtn" class="btn btn-sm" disabled>Nueva carpeta</button>
+            <label class="btn btn-sm btn-primary file-label" id="uploadFilesLabel">
+              Subir archivos (.bin)
+              <input id="fileInput" type="file" multiple accept=".bin,application/octet-stream" hidden disabled>
+            </label>
+            <label class="btn btn-sm btn-primary file-label" id="uploadDirLabel">
+              Subir carpeta
+              <input id="dirInput" type="file" webkitdirectory directory multiple hidden disabled>
+            </label>
+            <button id="uploadMultiDirBtn" class="btn btn-sm btn-primary" disabled title="Seleccionar varias carpetas y subirlas juntas">Subir varias carpetas</button>
+          </div>
+        </div>
+        <div id="moveBar" class="move-bar hidden" aria-live="polite">
+          <div class="move-info"><strong>Moviendo:</strong> <span id="moveName"></span></div>
+          <div class="move-actions">
+            <button id="pasteMoveBtn" class="btn btn-sm btn-primary">Mover aquí</button>
+            <button id="cancelMoveBtn" class="btn btn-sm btn-ghost">Cancelar</button>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table class="file-table">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th class="col-size">Tamaño</th>
+                <th class="col-type">Tipo</th>
+                <th class="col-actions">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="fileBody">
+              <tr><td colspan="4" class="empty">Conecta un dispositivo para ver sus archivos.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <section class="panel transfers-panel">
+      <div class="transfers-head">
+        <h2>Transferencias</h2>
+        <button id="clearTransfersBtn" class="btn btn-sm btn-ghost">Limpiar</button>
+      </div>
+      <div id="transferList" class="transfer-list">
+        <div class="empty muted">No hay transferencias en curso.</div>
+      </div>
+    </section>
+
+    <section class="panel log-panel">
+      <details>
+        <summary>Registro</summary>
+        <pre id="log" class="log"></pre>
+      </details>
+    </section>
+  </div>
+
+  <div id="pathModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-card modal-card-wide" role="dialog" aria-modal="true" aria-labelledby="pathModalTitle">
+      <h3 id="pathModalTitle">Ruta o nombre no válido</h3>
+      <p id="pathModalDesc" class="modal-desc"></p>
+      <div id="pathModalSegments" class="segment-list"></div>
+      <div id="pathModalFeedback" class="modal-feedback"></div>
+      <div class="modal-preview">
+        <span class="muted">Ruta resultante en el dispositivo:</span>
+        <code id="pathModalPreview"></code>
+      </div>
+      <div class="modal-actions">
+        <button id="pathModalSkip" class="btn btn-ghost">Omitir este elemento</button>
+        <button id="pathModalOk" class="btn btn-primary" disabled>Aplicar cambios</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
