@@ -426,7 +426,7 @@ export class PixlClient {
   }
 
   async writeFileChunk(fileId, chunk) {
-    const r = await this._sendCommand(0x15, concatBytes(Uint8Array.of(fileId), chunk));
+    const r = await this._sendCommand(0x15, concatBytes(Uint8Array.of(fileId), chunk), 30000);
     if (r.status !== 0) return { ok: false, error: this._vfsError(r.status) };
     return { ok: true, error: null };
   }
@@ -496,12 +496,27 @@ export class PixlClient {
       if (file.size === 0) { onProgress(0, 0); return; }
       let offset = 0;
       const chunkSize = this.maxChunkSize;
+      const maxRetries = 3;
       while (offset < file.size) {
         if (abortSignal && abortSignal.aborted) throw new Error("Subida cancelada por el usuario.");
         const end = Math.min(offset + chunkSize, file.size);
         const chunk = new Uint8Array(await file.slice(offset, end).arrayBuffer());
-        const res = await this.writeFileChunk(fileId, chunk);
-        if (!res.ok) throw new Error(res.error);
+        let lastErr = null;
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+          if (abortSignal && abortSignal.aborted) throw new Error("Subida cancelada por el usuario.");
+          try {
+            const res = await this.writeFileChunk(fileId, chunk);
+            if (res.ok) { lastErr = null; break; }
+            lastErr = new Error(res.error);
+          } catch (e) {
+            lastErr = e;
+          }
+          if (attempt < maxRetries) {
+            this._log(`Reintentando chunk en ${remotePath} (${attempt}/${maxRetries})...`);
+            await new Promise(r => setTimeout(r, 500 * attempt));
+          }
+        }
+        if (lastErr) throw lastErr;
         offset = end;
         onProgress(offset, file.size);
       }
