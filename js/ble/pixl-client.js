@@ -496,8 +496,8 @@ export class PixlClient {
     try {
       if (file.size === 0) { onProgress(0, 0); return; }
       let offset = 0;
-      const chunkSize = this.maxChunkSize;
-      const maxRetries = 3;
+      let chunkSize = Math.max(15, this.maxChunkSize || CHUNK_SIZE_LADDER[0]);
+      const maxRetries = 4;
       while (offset < file.size) {
         if (abortSignal && abortSignal.aborted) throw new Error("Subida cancelada por el usuario.");
         const end = Math.min(offset + chunkSize, file.size);
@@ -513,11 +513,30 @@ export class PixlClient {
             lastErr = e;
           }
           if (attempt < maxRetries) {
+            const msg = (lastErr && lastErr.message) || '';
+            const isTimeout = /Tiempo de espera agotado|timeout|agotado/i.test(msg);
+            // On timeout/protocol hiccups, reduce chunk size to improve reliability on sustained transfers
+            if (isTimeout && chunkSize > 15) {
+              const smaller = CHUNK_SIZE_LADDER.filter(s => s < chunkSize).sort((a,b) => b-a)[0] || 15;
+              if (smaller < chunkSize) {
+                chunkSize = smaller;
+                this.maxChunkSize = Math.min(this.maxChunkSize || chunkSize, chunkSize);
+                this._log(`Reduciendo tamaño de bloque a ${chunkSize} B para mejorar estabilidad en ${remotePath}...`);
+                lastErr = new Error(`${msg} (reintentando con bloque de ${chunkSize} B)`);
+                break; // rebuild chunk with new size in outer loop
+              }
+            }
             this._log(`Reintentando chunk en ${remotePath} (${attempt}/${maxRetries})...`);
-            await new Promise(r => setTimeout(r, 500 * attempt));
+            await new Promise(r => setTimeout(r, 600 * attempt));
           }
         }
-        if (lastErr) throw lastErr;
+        if (lastErr) {
+          // If we broke early due to chunk size reduction, retry same offset with new chunkSize
+          if (/reintentando con bloque de \d+ B\)?$/.test(lastErr.message || '')) {
+            continue;
+          }
+          throw lastErr;
+        }
         offset = end;
         onProgress(offset, file.size);
       }
