@@ -45,11 +45,14 @@ h1 { margin: 0; font-size: 1.6rem; line-height: 1.1; }
 .badge-bad { color: #450a0a; background: #fca5a5; border-color: #fca5a5; }
 
 .panel { background: rgba(30,41,59,.9); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); backdrop-filter: blur(6px); }
-.status { padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border); }
+.status { padding: 12px 14px; border-radius: 12px; border: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
 .status-info { background: rgba(56,189,248,.12); border-color: rgba(56,189,248,.35); }
 .status-success { background: rgba(34,197,94,.12); border-color: rgba(34,197,94,.35); }
 .status-warn { background: rgba(245,158,11,.12); border-color: rgba(245,158,11,.35); }
 .status-error { background: rgba(239,68,68,.12); border-color: rgba(239,68,68,.35); }
+.spinner { width: 16px; height: 16px; border: 2px solid rgba(229,238,252,.25); border-top-color: var(--info); border-radius: 50%; animation: spin .8s linear infinite; flex: 0 0 auto; }
+.spinner.hidden { display: none; }
+@keyframes spin { to { transform: rotate(360deg); } }
 
 .main { display: grid; grid-template-columns: 320px 1fr; gap: 16px; align-items: start; }
 .device-panel h2, .transfers-panel h2 { margin: 0 0 12px; font-size: 1.1rem; }

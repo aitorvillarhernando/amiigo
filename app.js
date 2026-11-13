@@ -12,6 +12,7 @@ const state = {
   cwd: '',           // e.g. E:/
   entries: [],
   busy: false,
+  busyLabel: '',
   abortController: null,
   clipboard: null,   // {path,name,type} for move
 };
@@ -20,6 +21,8 @@ const ui = {
   supportBadge: el('supportBadge'),
   connectBtn: el('connectBtn'),
   statusBar: el('statusBar'),
+  statusSpinner: el('statusSpinner'),
+  statusText: el('statusText'),
   devStatus: el('devStatus'),
   devName: el('devName'),
   devVersion: el('devVersion'),
@@ -63,8 +66,27 @@ function log(msg, level = 'info') {
 }
 
 function setStatus(text, kind = 'info') {
-  ui.statusBar.textContent = text;
+  if (ui.statusText) ui.statusText.textContent = text;
+  else ui.statusBar.textContent = text;
   ui.statusBar.className = `status status-${kind}`;
+  if (ui.statusSpinner && !state.busy) ui.statusSpinner.classList.add('hidden');
+}
+
+function setBusy(busy, label = '') {
+  state.busy = !!busy;
+  state.busyLabel = label || '';
+  document.body.classList.toggle('app-busy', state.busy);
+  if (ui.statusSpinner) {
+    if (state.busy && label) {
+      ui.statusSpinner.classList.remove('hidden');
+      setStatus(label, 'info');
+    } else if (!state.busy) {
+      ui.statusSpinner.classList.add('hidden');
+    }
+  }
+  setControlsConnected(!!(state.client && state.client.connected));
+  renderFiles();
+  renderPathbar();
 }
 
 function fmtBytes(bytes) {
@@ -289,10 +311,9 @@ async function verifyUpload(remotePath, expectedSize) {
 async function uploadQueue(tasks, title) {
   // tasks: [{ file: File, remotePath: string, displayName: string }]
   if (!tasks.length) return;
-  setBusy(true);
+  setBusy(true, 'Comprobando rutas antes de subir…');
 
   const cwd = state.cwd || (state.drive ? state.drive.label + ':/' : 'E:/');
-  setStatus('Comprobando rutas antes de subir…', 'info');
   const resolved = await resolvePathIssues(tasks.map(t => ({...t})), cwd);
   if (!resolved) { setBusy(false); return; }
   tasks = resolved.tasks;
@@ -305,7 +326,9 @@ async function uploadQueue(tasks, title) {
     return;
   }
 
-  // busy already set by caller context? ensure
+  // switch from "checking paths" busy label to upload mode (transfers show detailed progress)
+  if (ui.statusSpinner) ui.statusSpinner.classList.add('hidden');
+  setStatus('Subiendo archivos…', 'info');
   state.abortController = new AbortController();
   const group = createTransferGroup(title);
   group.setState('Subiendo…', 't-run');
@@ -718,19 +741,22 @@ ui.mkdirBtn.addEventListener('click', async () => {
   if (/[\\]/.test(name)) { alert('Nombre inválido.'); return; }
   const base = state.cwd.endsWith('/') ? state.cwd : state.cwd + '/';
   const path = base + name.replace(/^\/+|\/+$/g, '');
+  let ok = false; let errMsg = '';
   try {
-    setBusy(true);
+    setBusy(true, `Creando carpeta "${name}"…`);
     const res = await state.client.createFolder(path);
     if (!res.ok) throw new Error(res.error);
     log(`Carpeta creada: ${path}`);
-    setStatus(`Carpeta creada: ${name}`, 'success');
     await refreshDriveAndList(state.cwd);
+    ok = true;
   } catch (err) {
+    errMsg = err.message;
     log(`Error creando carpeta: ${err.message}`, 'error');
-    setStatus(`Error creando carpeta: ${err.message}`, 'error');
   } finally {
     setBusy(false);
   }
+  if (ok) setStatus(`Carpeta creada: ${name}`, 'success');
+  else setStatus(`Error creando carpeta: ${errMsg}`, 'error');
 });
 
 function validateNameOnly(name, kind) {
@@ -758,22 +784,25 @@ async function renameRemoteEntry(oldName, kind) {
     const pathKind = kind === 'dir' ? 'folder' : 'file';
     const limit = pathKind === 'folder' ? MAX_FOLDER_PATH_BYTES : MAX_FILE_PATH_BYTES;
     if (utf8Length(newPath) > limit) { alert(`La ruta resultante sería demasiado larga (${utf8Length(newPath)} bytes, máx. ${limit}). Usa un nombre más corto.`); proposed = newName; continue; }
+    let ok = false;
+    let errMsg = '';
     try {
-      setBusy(true);
+      setBusy(true, `Renombrando "${oldName}"…`);
       const res = await state.client.renamePath(oldPath, newPath);
       if (!res.ok) throw new Error(res.error);
       log(`Renombrado: ${oldPath} -> ${newPath}`);
-      setStatus(`Renombrado correctamente: ${newName}`, 'success');
       await refreshDriveAndList(state.cwd);
-      return;
+      ok = true;
     } catch (e) {
+      errMsg = e.message;
       log(`Error renombrando: ${e.message}`, 'error');
-      setStatus(`Error renombrando: ${e.message}`, 'error');
       alert(`No se pudo renombrar: ${e.message}`);
-      return;
     } finally {
       setBusy(false);
     }
+    if (ok) setStatus(`Renombrado correctamente: ${newName}`, 'success');
+    else setStatus(`Error renombrando: ${errMsg}`, 'error');
+    return;
   }
 }
 
@@ -814,19 +843,22 @@ ui.fileBody.addEventListener('click', async (e) => {
     const base = state.cwd.endsWith('/') ? state.cwd : state.cwd + '/';
     const path = base + name;
     if (!confirm(`¿Eliminar "${name}" del dispositivo?\n\nEsta acción no se puede deshacer.`)) return;
+    let ok = false; let errMsg = '';
     try {
-      setBusy(true);
+      setBusy(true, `Eliminando "${name}"…`);
       const res = await state.client.removePath(path);
       if (!res.ok) throw new Error(res.error);
       log(`Eliminado: ${path}`);
-      setStatus(`Eliminado: ${name}`, 'success');
       await refreshDriveAndList(state.cwd);
+      ok = true;
     } catch (err) {
+      errMsg = err.message;
       log(`Error eliminando: ${err.message}`, 'error');
-      setStatus(`Error eliminando: ${err.message}`, 'error');
     } finally {
       setBusy(false);
     }
+    if (ok) setStatus(`Eliminado: ${name}`, 'success');
+    else setStatus(`Error eliminando: ${errMsg}`, 'error');
   }
 });
 
@@ -864,20 +896,24 @@ ui.pasteMoveBtn.addEventListener('click', async () => {
   if (conflict) {
     if (!confirm(`Ya existe "${state.clipboard.name}" en esta carpeta. ¿Intentar mover igualmente? (puede fallar o sobrescribir según el dispositivo)`)) return;
   }
+  const movingName = state.clipboard.name;
+  let ok = false; let errMsg = '';
   try {
-    setBusy(true);
+    setBusy(true, `Moviendo "${movingName}"…`);
     const res = await state.client.renamePath(src, dest);
     if (!res.ok) throw new Error(res.error);
     log(`Movido: ${src} -> ${dest}`);
-    setStatus(`Movido correctamente: ${state.clipboard.name}`, 'success');
     state.clipboard = null;
     await refreshDriveAndList(state.cwd);
+    ok = true;
   } catch (err) {
+    errMsg = err.message;
     log(`Error moviendo: ${err.message}`, 'error');
-    setStatus(`Error al mover: ${err.message}`, 'error');
   } finally {
     setBusy(false);
   }
+  if (ok) setStatus(`Movido correctamente: ${movingName}`, 'success');
+  else setStatus(`Error al mover: ${errMsg}`, 'error');
 });
 
 ui.fileInput.addEventListener('change', async (e) => {
