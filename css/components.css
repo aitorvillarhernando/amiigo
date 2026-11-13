@@ -39,6 +39,8 @@ h1 { margin: 0; font-size: 1.6rem; line-height: 1.1; }
 .help summary { cursor: pointer; color: var(--text); margin-bottom: 6px; }
 .help ul { margin: 6px 0 0 18px; padding: 0; }
 .help li { margin: 4px 0; }
+.help a { color: var(--info); text-decoration: none; }
+.help a:hover { text-decoration: underline; }
 
 .btn {
   appearance: none; border: 1px solid var(--border); background: #162033; color: var(--text);

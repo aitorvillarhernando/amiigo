@@ -496,8 +496,12 @@ export class PixlClient {
     try {
       if (file.size === 0) { onProgress(0, 0); return; }
       let offset = 0;
-      let chunkSize = Math.max(15, this.maxChunkSize || CHUNK_SIZE_LADDER[0]);
-      const maxRetries = 4;
+      // start conservatively for large transfers; very large files are prone to mid-stream device errors
+      let chunkSize = Math.max(15, Math.min(this.maxChunkSize || CHUNK_SIZE_LADDER[0], 177));
+      if (file.size > 200 * 1024) chunkSize = 15;
+      if (this.maxChunkSize && this.maxChunkSize < chunkSize) chunkSize = this.maxChunkSize;
+      const maxRetries = 5;
+      let chunksSinceYield = 0;
       while (offset < file.size) {
         if (abortSignal && abortSignal.aborted) throw new Error("Subida cancelada por el usuario.");
         const end = Math.min(offset + chunkSize, file.size);
@@ -515,8 +519,9 @@ export class PixlClient {
           if (attempt < maxRetries) {
             const msg = (lastErr && lastErr.message) || '';
             const isTimeout = /Tiempo de espera agotado|timeout|agotado/i.test(msg);
-            // On timeout/protocol hiccups, reduce chunk size to improve reliability on sustained transfers
-            if (isTimeout && chunkSize > 15) {
+            const isCmdFail = /Command failed|Device error/i.test(msg);
+            // On timeout/protocol hiccups or device errors, reduce chunk size and slow down
+            if (chunkSize > 15 && (isTimeout || isCmdFail || /Out of memory|No space/i.test(msg))) {
               const smaller = CHUNK_SIZE_LADDER.filter(s => s < chunkSize).sort((a,b) => b-a)[0] || 15;
               if (smaller < chunkSize) {
                 chunkSize = smaller;
@@ -526,8 +531,9 @@ export class PixlClient {
                 break; // rebuild chunk with new size in outer loop
               }
             }
-            this._log(`Reintentando chunk en ${remotePath} (${attempt}/${maxRetries})...`);
-            await new Promise(r => setTimeout(r, 600 * attempt));
+            const backoff = (isTimeout || isCmdFail ? 1200 : 700) * attempt;
+            this._log(`Reintentando chunk en ${remotePath} (offset ${offset}, intento ${attempt}/${maxRetries})...`);
+            await new Promise(r => setTimeout(r, backoff));
           }
         }
         if (lastErr) {
@@ -535,10 +541,19 @@ export class PixlClient {
           if (/reintentando con bloque de \d+ B\)?$/.test(lastErr.message || '')) {
             continue;
           }
-          throw lastErr;
+          throw new Error(`${lastErr.message || lastErr} (offset ${offset} de ${file.size})`);
         }
         offset = end;
+        chunksSinceYield++;
         onProgress(offset, file.size);
+        // pacing: give the device time to commit flash writes during sustained transfers
+        const paceMs = chunkSize <= 15 ? 25 : (chunkSize <= 177 ? 12 : 8);
+        await new Promise(r => setTimeout(r, paceMs));
+        // extra periodic yield
+        if (chunksSinceYield >= 20) {
+          chunksSinceYield = 0;
+          await new Promise(r => setTimeout(r, 30));
+        }
       }
     } finally {
       await this.closeFile(fileId).catch(() => {});
