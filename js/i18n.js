@@ -448,6 +448,20 @@ export function updateMetaTags() {
   setMeta('html', 'lang', currentLang); // harmless if selector not used; lang set above
 }
 
+function detectPreferredLang() {
+  const langs = [];
+  try {
+    if (Array.isArray(navigator.languages) && navigator.languages.length) langs.push(...navigator.languages);
+  } catch (_) {}
+  try { if (navigator.language) langs.push(navigator.language); } catch (_) {}
+  const normalized = langs.map(l => String(l || '').toLowerCase());
+  const isPeninsular = (l) => /^(es|ca|eu|gl|ast|an|oc)([-_]|$)/.test(l);
+  for (const l of normalized) {
+    if (isPeninsular(l)) return 'es';
+  }
+  return 'en';
+}
+
 export function initI18n() {
   let saved = null;
   try {
@@ -467,8 +481,7 @@ export function initI18n() {
   } else if (saved && translations[saved]) {
     currentLang = saved;
   } else {
-    const nav = (navigator.language || '').toLowerCase();
-    currentLang = nav.startsWith('en') ? 'en' : 'es';
+    currentLang = detectPreferredLang();
   }
   // keep URL in sync with resolved language
   try {
