@@ -8,12 +8,17 @@ import { createTransferGroup } from '../ui/transfers.js';
 import { resolveTasksPaths } from '../ui/modal.js';
 import { refreshDriveAndList } from '../ui/browser.js';
 
+function maybeLowercasePath(relPath) {
+  if (!state.lowercaseOnUpload) return relPath;
+  return String(relPath || '').split('/').map(seg => seg.toLowerCase()).join('/');
+}
+
 export async function collectSelectedFiles(fileList, { isDirectory = false } = {}) {
   const out = [];
   for (const f of Array.from(fileList || [])) {
-    const rel = isDirectory ? (f.webkitRelativePath || f.name) : f.name;
+    const relRaw = isDirectory ? (f.webkitRelativePath || f.name) : f.name;
     if (!/\.bin$/i.test(f.name)) continue;
-    out.push({ file: f, relativePath: rel });
+    out.push({ file: f, relativePath: maybeLowercasePath(relRaw) });
   }
   return out;
 }
@@ -40,7 +45,7 @@ export async function pickMultipleDirectories() {
     const files = [];
     for await (const [name, entry] of handle.entries()) {
       if (!isSafeFileName(name)) continue;
-      const rel = prefix ? `${prefix}/${name}` : name;
+      const rel = maybeLowercasePath(prefix ? `${prefix}/${name}` : name);
       if (entry.kind === 'file') {
         if (/\.bin$/i.test(name)) {
           const file = await entry.getFile();
@@ -56,7 +61,7 @@ export async function pickMultipleDirectories() {
 
   const all = [];
   for (const d of dirs) {
-    const prefix = d.name || 'carpeta';
+    const prefix = maybeLowercasePath(d.name || 'carpeta');
     const files = await walkDir(d, prefix);
     all.push(...files);
   }

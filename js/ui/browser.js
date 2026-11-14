@@ -55,14 +55,17 @@ export function renderFiles() {
     tbody.innerHTML = `<tr><td colspan="4" class="empty">${escapeHtml(t('browser.emptyConnect'))}</td></tr>`;
     return;
   }
-  const entries = [...state.entries].sort((a, b) => {
+  let entries = [...state.entries].sort((a, b) => {
     const ad = (a.type === 'DIR' || a.type === 'dir') ? 0 : 1;
     const bd = (b.type === 'DIR' || b.type === 'dir') ? 0 : 1;
     if (ad !== bd) return ad - bd;
     return a.name.localeCompare(b.name);
   });
+  const q = (state.filter || '').trim().toLowerCase();
+  if (q) entries = entries.filter(e => e.name.toLowerCase().includes(q));
   if (entries.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="4" class="empty">${escapeHtml(t('browser.emptyFolder'))}</td></tr>`;
+    const key = q && state.entries.length ? 'browser.noSearchResults' : 'browser.emptyFolder';
+    tbody.innerHTML = `<tr><td colspan="4" class="empty">${escapeHtml(t(key))}</td></tr>`;
     return;
   }
   for (const e of entries) {
@@ -72,14 +75,18 @@ export function renderFiles() {
     const size = isDir ? '—' : formatBytes(e.size);
     const type = isDir ? t('browser.folder') : t('browser.file');
     const etype = isDir ? 'dir' : 'file';
-    const moveTitle = document.documentElement.lang === 'en' ? 'Move' : 'Mover';
-    const renTitle = document.documentElement.lang === 'en' ? 'Rename' : 'Renombrar';
-    const delTitle = document.documentElement.lang === 'en' ? 'Delete' : 'Eliminar';
+    const isEn = document.documentElement.lang === 'en';
+    const dlTitle = isEn ? 'Download' : 'Descargar';
+    const moveTitle = isEn ? 'Move' : 'Mover';
+    const renTitle = isEn ? 'Rename' : 'Renombrar';
+    const delTitle = isEn ? 'Delete' : 'Eliminar';
     const nameCell = `<div class="name-cell"><span class="icon">${icon}</span><span class="name-link ${isDir ? 'dir' : 'file'}" data-type="${etype}" data-name="${escapeAttr(e.name)}">${escapeHtml(e.name)}</span></div>`;
+    const dlBtn = !isDir ? `<button class="icon-btn" data-act="download" data-name="${escapeAttr(e.name)}" title="${escapeAttr(dlTitle)}" aria-label="${escapeAttr(dlTitle)}">⬇️</button>` : '';
     const actions = `
-      <button class="icon-btn" data-act="move" data-name="${escapeAttr(e.name)}" data-type="${etype}" title="${escapeAttr(moveTitle)}">📦</button>
-      <button class="icon-btn" data-act="rename" data-name="${escapeAttr(e.name)}" title="${escapeAttr(renTitle)}">✏️</button>
-      <button class="icon-btn" data-act="delete" data-name="${escapeAttr(e.name)}" data-type="${etype}" title="${escapeAttr(delTitle)}">🗑️</button>`;
+      ${dlBtn}
+      <button class="icon-btn" data-act="move" data-name="${escapeAttr(e.name)}" data-type="${etype}" title="${escapeAttr(moveTitle)}" aria-label="${escapeAttr(moveTitle)}">📦</button>
+      <button class="icon-btn" data-act="rename" data-name="${escapeAttr(e.name)}" title="${escapeAttr(renTitle)}" aria-label="${escapeAttr(renTitle)}">✏️</button>
+      <button class="icon-btn" data-act="delete" data-name="${escapeAttr(e.name)}" data-type="${etype}" title="${escapeAttr(delTitle)}" aria-label="${escapeAttr(delTitle)}">🗑️</button>`;
     tr.innerHTML = `<td>${nameCell}</td><td class="col-size">${size}</td><td class="col-type">${type}</td><td class="col-actions">${actions}</td>`;
     tbody.appendChild(tr);
   }
@@ -96,6 +103,7 @@ export function renderFiles() {
   tbody.querySelectorAll('[data-act="rename"]').forEach(btn => btn.addEventListener('click', () => onRename(btn.dataset.name)));
   tbody.querySelectorAll('[data-act="delete"]').forEach(btn => btn.addEventListener('click', () => onDelete(btn.dataset.name, btn.dataset.type)));
   tbody.querySelectorAll('[data-act="move"]').forEach(btn => btn.addEventListener('click', () => onMovePick(btn.dataset.name, btn.dataset.type)));
+  tbody.querySelectorAll('[data-act="download"]').forEach(btn => btn.addEventListener('click', () => onDownload(btn.dataset.name)));
   tbody.querySelectorAll('.icon-btn').forEach(b => b.disabled = !!state.busy);
 
   updateMoveBar();
@@ -138,9 +146,11 @@ export let handlers = {
   onRename: async () => {},
   onDelete: async () => {},
   onMovePick: () => {},
+  onDownload: async () => {},
 };
 
 export function setBrowserHandlers(h) { handlers = { ...handlers, ...h }; }
 function onRename(name) { return handlers.onRename(name); }
 function onDelete(name, type) { return handlers.onDelete(name, type); }
 function onMovePick(name, type) { return handlers.onMovePick(name, type); }
+function onDownload(name) { return handlers.onDownload(name); }

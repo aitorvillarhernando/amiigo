@@ -319,3 +319,58 @@ export async function updateFirmwareFlow() {
     log(t('status.dfuErrorShort', { msg: err.message }), 'error');
   }
 }
+
+
+export async function downloadFile(name) {
+  if (state.busy || !state.client || !state.client.connected) return;
+  const base = state.cwd.endsWith('/') ? state.cwd : state.cwd + '/';
+  const path = base + name;
+  let ok = false; let errMsg = '';
+  try {
+    setBusy(true, t('busy.downloading', { name }));
+    setStatus(t('status.downloading', { name }), 'info');
+    const res = await state.client.readFileData(path);
+    if (!res.ok) throw new Error(res.error);
+    const blob = new Blob([res.data], { type: 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    log(t('msg.downloaded', { name }));
+    ok = true;
+  } catch (err) {
+    errMsg = err.message || String(err);
+    log(t('msg.errorDownloading', { msg: errMsg }), 'error');
+  } finally {
+    setBusy(false);
+  }
+  if (ok) setStatus(t('msg.downloaded', { name }), 'success');
+  else setStatus(t('msg.errorDownloading', { msg: errMsg }), 'error');
+}
+
+export async function formatDriveAction() {
+  if (state.busy || !state.client || !state.client.connected || !state.drive) return;
+  const drive = state.drive.label ? (state.drive.label + ':/') : (state.drive.name || 'drive');
+  if (!confirm(t('confirm.formatDrive', { drive }))) return;
+  let ok = false; let errMsg = '';
+  try {
+    setBusy(true, t('busy.formatting'));
+    const res = await state.client.formatDrive(state.drive.label);
+    if (!res.ok) throw new Error(res.error);
+    log(t('log.formatted'));
+    state.clipboard = null;
+    await refreshDriveAndList(state.drive.label + ':/');
+    ok = true;
+  } catch (err) {
+    errMsg = err.message || String(err);
+    log(t('msg.errorFormatting', { msg: errMsg }), 'error');
+  } finally {
+    setBusy(false);
+  }
+  if (ok) setStatus(t('msg.formatted'), 'success');
+  else setStatus(t('msg.errorFormatting', { msg: errMsg }), 'error');
+}

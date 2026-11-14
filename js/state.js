@@ -9,6 +9,8 @@ export const state = {
   busyLabel: '',
   abortController: null,
   clipboard: null,   // {path,name,type} for move
+  filter: '',
+  lowercaseOnUpload: false,
 };
 
 export const ui = {
@@ -39,6 +41,15 @@ export const ui = {
   transferList: el('transferList'),
   clearTransfersBtn: el('clearTransfersBtn'),
   log: el('log'),
+  clearLogBtn: el('clearLogBtn'),
+  copyLogBtn: el('copyLogBtn'),
+  searchInput: el('searchInput'),
+  lowercaseUploadToggle: el('lowercaseUploadToggle'),
+  formatBtn: el('formatBtn'),
+  browserPanel: el('browserPanel'),
+  toolbarActions: el('toolbarActions'),
+  dropZone: el('dropZone'),
+  dropHint: el('dropHint'),
   moveBar: el('moveBar'),
   moveName: el('moveName'),
   pasteMoveBtn: el('pasteMoveBtn'),

@@ -23,12 +23,14 @@ export function setControlsConnected(connected) {
   ui.connectBtn.textContent = on ? t('header.disconnect') : t('header.connect');
   ui.refreshBtn.disabled = !on || state.busy;
   ui.dfuBtn.disabled = !on || state.busy;
+  if (ui.formatBtn) ui.formatBtn.disabled = !on || state.busy;
   ui.upBtn.disabled = !on || state.busy;
   ui.mkdirBtn.disabled = !on || state.busy;
   ui.fileInput.disabled = !on || state.busy;
   ui.dirInput.disabled = !on || state.busy;
   ui.uploadMultiDirBtn.disabled = !on || state.busy || !(window.showDirectoryPicker);
   ui.devStatus.textContent = on ? t('device.connected') : t('device.disconnected');
+  if (ui.toolbarActions) ui.toolbarActions.classList.toggle('hidden', !on);
   if (!on) {
     ui.devName.textContent = '—';
     ui.devVersion.textContent = '—';

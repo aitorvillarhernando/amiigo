@@ -15,9 +15,11 @@ import {
   pasteMove,
   cancelMove,
   updateFirmwareFlow,
+  downloadFile,
+  formatDriveAction,
 } from './services/device.js';
 
-setBrowserHandlers({ onRename, onDelete, onMovePick });
+setBrowserHandlers({ onRename, onDelete, onMovePick, onDownload: downloadFile });
 
 const lang = initI18n();
 if (ui.langSelect) {
@@ -93,6 +95,124 @@ ui.clearTransfersBtn.addEventListener('click', clearCompletedTransfers);
 ui.pasteMoveBtn.addEventListener('click', pasteMove);
 ui.cancelMoveBtn.addEventListener('click', cancelMove);
 ui.dfuBtn.addEventListener('click', updateFirmwareFlow);
+if (ui.formatBtn) ui.formatBtn.addEventListener('click', formatDriveAction);
+
+if (ui.searchInput) {
+  ui.searchInput.addEventListener('input', () => {
+    state.filter = ui.searchInput.value || '';
+    renderFiles();
+  });
+}
+if (ui.lowercaseUploadToggle) {
+  ui.lowercaseUploadToggle.addEventListener('change', () => {
+    state.lowercaseOnUpload = !!ui.lowercaseUploadToggle.checked;
+  });
+}
+if (ui.clearLogBtn) {
+  ui.clearLogBtn.addEventListener('click', (e) => {
+    e.preventDefault(); e.stopPropagation();
+    if (ui.log) ui.log.textContent = '';
+  });
+}
+if (ui.copyLogBtn) {
+  ui.copyLogBtn.addEventListener('click', async (e) => {
+    e.preventDefault(); e.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(ui.log?.textContent || '');
+      setStatus(t('log.copied'), 'success');
+    } catch (_) {
+      setStatus(t('log.copyFailed'), 'error');
+    }
+  });
+}
+
+async function traverseEntry(entry, prefix = '') {
+  if (!entry) return [];
+  if (entry.isFile) {
+    const file = await new Promise((resolve, reject) => entry.file(resolve, reject));
+    const rel = prefix ? `${prefix}/${file.name}` : file.name;
+    return [{ file, relativePath: rel }];
+  }
+  if (entry.isDirectory) {
+    const dirName = prefix ? `${prefix}/${entry.name}` : entry.name;
+    const reader = entry.createReader();
+    const entries = [];
+    while (true) {
+      const batch = await new Promise((resolve, reject) => reader.readEntries(resolve, reject));
+      if (!batch || !batch.length) break;
+      entries.push(...batch);
+    }
+    const out = [];
+    for (const ent of entries) {
+      out.push(...await traverseEntry(ent, dirName));
+    }
+    return out;
+  }
+  return [];
+}
+
+async function collectDroppedTasks(dt) {
+  if (!dt) return [];
+  const items = Array.from(dt.items || []);
+  if (items.length && items[0].webkitGetAsEntry) {
+    const out = [];
+    for (const item of items) {
+      const entry = item.webkitGetAsEntry ? item.webkitGetAsEntry() : null;
+      if (entry) {
+        if (entry.isFile) {
+          const file = item.getAsFile();
+          if (file) out.push({ file, relativePath: file.name, isDirectory: false });
+        } else if (entry.isDirectory) {
+          const files = await traverseEntry(entry, '');
+          for (const f of files) out.push({ ...f, isDirectory: true });
+        }
+      } else {
+        const file = item.getAsFile();
+        if (file) out.push({ file, relativePath: file.name, isDirectory: false });
+      }
+    }
+    // normalize via collectSelectedFiles-like filtering/lowercasing
+    const bin = out.filter(t => /\.bin$/i.test(t.file.name));
+    if (!bin.length) return [];
+    if (!state.lowercaseOnUpload) return bin.map(t => ({ file: t.file, relativePath: t.relativePath }));
+    return bin.map(t => ({ file: t.file, relativePath: String(t.relativePath||'').split('/').map(s=>s.toLowerCase()).join('/') }));
+  }
+  return collectSelectedFiles(dt.files, { isDirectory: false });
+}
+
+function setupDragDrop() {
+  const target = ui.dropZone || ui.browserPanel;
+  if (!target) return;
+  let depth = 0;
+  const show = (on) => { if (ui.dropHint) ui.dropHint.classList.toggle('hidden', !on); target.classList.toggle('drag-over', !!on); };
+  ['dragenter','dragover'].forEach(ev => target.addEventListener(ev, (e) => {
+    e.preventDefault(); e.stopPropagation();
+    if (!state.client || !state.client.connected || state.busy) return;
+    if (ev==='dragenter') depth++;
+    show(true);
+  }));
+  ['dragleave','drop'].forEach(ev => target.addEventListener(ev, (e) => {
+    e.preventDefault(); e.stopPropagation();
+    if (ev==='dragleave') depth = Math.max(0, depth-1);
+    if (ev==='drop' || depth===0) { depth=0; show(false); }
+  }));
+  target.addEventListener('drop', async (e) => {
+    if (!state.client || !state.client.connected || state.busy) return;
+    try {
+      const tasks = await collectDroppedTasks(e.dataTransfer);
+      if (!tasks.length) { setStatus(t('status.folderNoBin'), 'warn'); return; }
+      const title = document.documentElement.lang === 'en'
+        ? `Upload ${tasks.length} file(s)`
+        : `Subida de ${tasks.length} archivo(s)`;
+      await uploadTasks(tasks, title);
+    } catch (err) {
+      log(t('msg.errorSelectingFolders', { msg: err.message }), 'error');
+      setStatus(t('msg.errorSelectingFolders', { msg: err.message }), 'error');
+    }
+  });
+}
+
+setupDragDrop();
 
 function initLocalOnlyLinks() {
   const isLocal = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);

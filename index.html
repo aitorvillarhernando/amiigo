@@ -71,6 +71,7 @@
         <div class="actions-stack">
           <button id="refreshBtn" class="btn" disabled data-i18n="device.refresh">Actualizar</button>
           <button id="dfuBtn" class="btn btn-ghost" disabled data-i18n="device.updateFw" data-i18n-title="device.updateFwTitle" title="Reiniciar en modo actualización de firmware (DFU)">Actualizar firmware</button>
+          <!--button id="formatBtn" class="btn btn-ghost btn-danger" disabled data-i18n="device.format" data-i18n-title="device.formatTitle" title="Borrar todos los datos de la unidad seleccionada">Formatear unidad</button-->
         </div>
 
         <details class="help">
@@ -85,21 +86,30 @@
         </details>
       </aside>
 
-      <section class="panel browser-panel">
+      <section class="panel browser-panel" id="browserPanel">
         <div class="toolbar">
           <div class="pathbar" id="pathbar" aria-label="Ruta actual"></div>
-          <div class="toolbar-actions">
-            <button id="upBtn" class="btn btn-sm" disabled data-i18n="browser.up" data-i18n-title="browser.upTitle" title="Subir nivel">↑ Arriba</button>
-            <button id="mkdirBtn" class="btn btn-sm" disabled data-i18n="browser.mkdir">Nueva carpeta</button>
-            <label class="btn btn-sm btn-primary file-label" id="uploadFilesLabel">
-              <span data-i18n="browser.uploadFiles">Subir archivos (.bin)</span>
-              <input id="fileInput" type="file" multiple accept=".bin,application/octet-stream" hidden disabled>
-            </label>
-            <label class="btn btn-sm btn-primary file-label" id="uploadDirLabel">
-              <span data-i18n="browser.uploadDir">Subir carpeta</span>
-              <input id="dirInput" type="file" webkitdirectory directory multiple hidden disabled>
-            </label>
-            <button id="uploadMultiDirBtn" class="btn btn-sm btn-primary" disabled data-i18n="browser.uploadMultiDir" data-i18n-title="browser.uploadMultiDirTitle" title="Seleccionar varias carpetas y subirlas juntas">Subir varias carpetas</button>
+          <div class="toolbar-actions hidden" id="toolbarActions">
+            <div class="toolbar-group toolbar-group-main">
+              <input id="searchInput" class="search-input" type="search" data-i18n-placeholder="browser.search" placeholder="Buscar archivos…" aria-label="Buscar archivos">
+              <label class="toggle-inline" data-i18n-title="browser.lowercaseUploadTitle" title="Convertir nombres de archivos y carpetas a minúsculas al subir">
+                <input id="lowercaseUploadToggle" type="checkbox">
+                <span data-i18n="browser.lowercaseUpload">Minúsculas al subir</span>
+              </label>
+              <button id="upBtn" class="btn btn-sm" disabled data-i18n="browser.up" data-i18n-title="browser.upTitle" title="Subir nivel">↑ Arriba</button>
+              <button id="mkdirBtn" class="btn btn-sm" disabled data-i18n="browser.mkdir">Nueva carpeta</button>
+            </div>
+            <div class="toolbar-group toolbar-group-upload">
+              <label class="btn btn-sm btn-primary file-label" id="uploadFilesLabel">
+                <span data-i18n="browser.uploadFiles">Subir archivos (.bin)</span>
+                <input id="fileInput" type="file" multiple accept=".bin,application/octet-stream" hidden disabled>
+              </label>
+              <label class="btn btn-sm btn-primary file-label" id="uploadDirLabel">
+                <span data-i18n="browser.uploadDir">Subir carpeta</span>
+                <input id="dirInput" type="file" webkitdirectory directory multiple hidden disabled>
+              </label>
+              <button id="uploadMultiDirBtn" class="btn btn-sm btn-primary" disabled data-i18n="browser.uploadMultiDir" data-i18n-title="browser.uploadMultiDirTitle" title="Seleccionar varias carpetas y subirlas juntas">Subir varias carpetas</button>
+            </div>
           </div>
         </div>
         <div id="moveBar" class="move-bar hidden" aria-live="polite">
@@ -110,7 +120,8 @@
           </div>
         </div>
 
-        <div class="table-wrap">
+        <div class="table-wrap" id="dropZone">
+          <div id="dropHint" class="drop-hint hidden" data-i18n="browser.dragDropHint">Suelta archivos o carpetas .bin para subirlos</div>
           <table class="file-table">
             <thead>
               <tr>
@@ -139,8 +150,14 @@
     </section>
 
     <section class="panel log-panel">
-      <details>
-        <summary data-i18n="log.title">Registro</summary>
+      <details open>
+        <summary class="log-summary">
+          <span data-i18n="log.title">Registro</span>
+          <span class="log-actions">
+            <button id="copyLogBtn" class="btn btn-sm btn-ghost" type="button" data-i18n="log.copy">Copiar</button>
+            <button id="clearLogBtn" class="btn btn-sm btn-ghost" type="button" data-i18n="log.clear">Limpiar</button>
+          </span>
+        </summary>
         <pre id="log" class="log"></pre>
       </details>
     </section>
@@ -157,6 +174,16 @@
         </a>
       </div>
     </footer>
+
+    <nav class="project-links" aria-label="Project links">
+      <a href="https://github.com/aitorvillarhernando/amiigo" target="_blank" rel="noopener noreferrer" data-i18n="footer.sourceCode">Código fuente</a>
+      <span aria-hidden="true">·</span>
+      <a href="https://github.com/aitorvillarhernando/amiigo/issues" target="_blank" rel="noopener noreferrer" data-i18n="footer.reportIssue">Reportar un problema</a>
+      <span aria-hidden="true">·</span>
+      <a href="https://github.com/aitorvillarhernando/amiigo/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" data-i18n="footer.license">Licencia (MIT)</a>
+      <span aria-hidden="true">·</span>
+      <a href="https://github.com/aitorvillarhernando/amiigo/blob/main/THIRD_PARTY_NOTICES.md" target="_blank" rel="noopener noreferrer" data-i18n="footer.thirdPartyNotices">Avisos de terceros</a>
+    </nav>
 
     <section class="ai-disclaimer" aria-label="Nota">
       <p data-i18n="footer.aiDisclaimer">Esta aplicación se ha ido construyendo con el apoyo de herramientas de inteligencia artificial, combinándolo con revisión y ajustes manuales para cuidar el resultado y que todo funcione correctamente.</p>
