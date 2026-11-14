@@ -29,3 +29,14 @@ body {
               var(--bg);
   text-wrap: pretty;
 }
+
+.sr-only-brand { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+::selection {
+  background: rgba(79, 140, 255, 0.35);
+  color: #f8fbff;
+}
+::-moz-selection {
+  background: rgba(79, 140, 255, 0.35);
+  color: #f8fbff;
+}

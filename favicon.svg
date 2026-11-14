@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="16" fill="#0f172a"/>
+  <g stroke-linecap="round" fill="none" stroke-width="7">
+    <!-- left side: top angled, middle straight, bottom angled -->
+    <line x1="14" y1="14" x2="20" y2="24" stroke="#E60012"/>
+    <line x1="12" y1="32" x2="22" y2="32" stroke="#85C419"/>
+    <line x1="14" y1="50" x2="20" y2="40" stroke="#19A8E0"/>
+    <!-- right side: distinct colors -->
+    <line x1="50" y1="14" x2="44" y2="24" stroke="#00A859"/>
+    <line x1="52" y1="32" x2="42" y2="32" stroke="#FFD200"/>
+    <line x1="50" y1="50" x2="44" y2="40" stroke="#EC008C"/>
+  </g>
+</svg>

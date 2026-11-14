@@ -1,4 +1,4 @@
-# Amiibo Amigo
+# Amiigo
 
 Aplicación web (HTML + CSS + JavaScript vanilla) para gestionar dispositivos simuladores NFC compatibles con el protocolo Pixl.js / Allmiibo mediante Web Bluetooth.
 

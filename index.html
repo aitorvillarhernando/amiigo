@@ -3,7 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Amiibo Amigo</title>
+  <title>Amiigo</title>
+  <meta name="description" content="Gestor web por Bluetooth para simuladores NFC Pixl.js / compatibles. Explora, sube, organiza y verifica archivos .bin desde el navegador.">
+  <meta name="keywords" content="Amiigo, Pixl.js, NFC, Bluetooth, Web Bluetooth, gestor de archivos, .bin">
+  <meta name="author" content="Amiigo">
+  <meta name="robots" content="index,follow">
+  <meta name="theme-color" content="#0f172a">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Amiigo">
+  <meta property="og:description" content="Gestor web por Bluetooth para simuladores NFC Pixl.js / compatibles. Explora, sube, organiza y verifica archivos .bin desde el navegador.">
+  <meta property="og:locale" content="es_ES">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Amiigo">
+  <meta name="twitter:description" content="Gestor web por Bluetooth para simuladores NFC Pixl.js / compatibles. Explora, sube, organiza y verifica archivos .bin desde el navegador.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/layout.css">
   <link rel="stylesheet" href="css/components.css">
@@ -13,9 +26,13 @@
   <div class="app">
     <header class="header">
       <div class="brand">
-        <div class="logo" aria-hidden="true">AA</div>
-        <div>
-          <h1>Amiibo Amigo</h1>
+        <div class="brand-main">
+          <h1 class="sr-only-brand">Amiigo</h1>
+          <div class="logo" role="img" aria-label="Amiigo">
+            <span class="logo-stripes left" aria-hidden="true"><span></span><span></span><span></span></span>
+            <span class="logo-word" aria-hidden="true">Amiigo</span>
+            <span class="logo-stripes right" aria-hidden="true"><span></span><span></span><span></span></span>
+          </div>
           <p class="subtitle" data-i18n="app.subtitle">Gestor Bluetooth para simuladores NFC (Pixl.js / Allmiibo)</p>
         </div>
       </div>
@@ -131,7 +148,7 @@
       <div class="support-footer-inner">
         <div class="support-footer-icon" aria-hidden="true">☕</div>
         <div class="support-footer-text">
-          <h2 data-i18n="footer.supportTitle">¿Te ha sido útil Amiibo Amigo?</h2>
+          <h2 data-i18n="footer.supportTitle">¿Te ha sido útil Amiigo?</h2>
           <p data-i18n="footer.supportCopy">Si esta herramienta te ha ayudado a gestionar tus archivos, puedes invitarme a un café para apoyar su mantenimiento y futuras mejoras.</p>
         </div>
         <a href="https://ko-fi.com/aitorvillarhernando" target="_blank" rel="noopener noreferrer" class="btn btn-primary support-footer-btn">
@@ -140,6 +157,10 @@
         </a>
       </div>
     </footer>
+
+    <section class="ai-disclaimer" aria-label="Nota">
+      <p data-i18n="footer.aiDisclaimer">Esta aplicación se ha ido construyendo con el apoyo de herramientas de inteligencia artificial, combinándolo con revisión y ajustes manuales para cuidar el resultado y que todo funcione correctamente.</p>
+    </section>
   </div>
 
   <div id="pathModal" class="modal hidden" aria-hidden="true">

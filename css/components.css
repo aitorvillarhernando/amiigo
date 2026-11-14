@@ -1,10 +1,55 @@
+.brand-main { display: flex; flex-direction: column; gap: 4px; }
 .logo {
-  width: 48px; height: 48px; border-radius: 12px; display: grid; place-items: center;
-  font-weight: 800; letter-spacing: .5px; color: #fff;
-  background: linear-gradient(135deg, #4f8cff, #22c55e);
-  box-shadow: var(--shadow);
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 4px;
+  pointer-events: none;
+}
+.logo-stripes {
+  position: relative;
+  width: 34px;
+  height: 38px;
+  display: block;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .25em;
+  rotate: 90deg;
+}
+.logo-stripes span {
+  /*position: absolute;
+  left: 50%;*/
+  width: 7px;
+  height: 14px;
+  border-radius: 999px;
+  transform-origin: center;
+}
+
+.logo-stripes.left span:nth-child(1) { background: #E60012; }
+.logo-stripes.left span:nth-child(2) { background: #85C419; }
+.logo-stripes.left span:nth-child(3) { background: #19A8E0; }
+.logo-stripes.right span:nth-child(1) { background: #00A859; }
+.logo-stripes.right span:nth-child(2) { background: #FFD200; }
+.logo-stripes.right span:nth-child(3) { background: #EC008C; }
+
+.logo-stripes.right span:nth-child(1), .logo-stripes.left span:nth-child(3) { rotate: -15deg; }
+.logo-stripes.right span:nth-child(3), .logo-stripes.left span:nth-child(1) { rotate: 15deg; }
+.logo-word {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: .2px;
+  color: #f8fbff;
+  line-height: 1;
+  font-family: "Trebuchet MS", "Arial Rounded MT Bold", "Nunito", var(--sans);
 }
 h1 { margin: 0; font-size: 1.6rem; line-height: 1.1; }
+@media (max-width: 900px) {
+  .logo-word { font-size: 1.7rem; }
+  .logo-stripes { width: 28px; height: 32px; }
+  .logo-stripes span { width: 6px; height: 12px; }
+  .logo-stripes.left span:nth-child(2), .logo-stripes.right span:nth-child(2) { top: 10px; height: 12px; }
+}
 .subtitle { margin: 4px 0 0; color: var(--muted); font-size: .95rem; }
 
 .badge { padding: 6px 10px; border-radius: 999px; font-size: .85rem; border: 1px solid var(--border); }
@@ -42,6 +87,8 @@ h1 { margin: 0; font-size: 1.6rem; line-height: 1.1; }
 .help a { color: var(--info); text-decoration: none; }
 .help a:hover { text-decoration: underline; }
 .support-footer-btn:hover { transform: translateY(-1px); }
+.ai-disclaimer { width: 100%; padding: 14px 18px; border-radius: 12px; border: 1px solid var(--border); background: rgba(17, 24, 39, 0.45); }
+.ai-disclaimer p { margin: 0; color: var(--muted); font-size: .9rem; line-height: 1.55; text-align: center; }
 
 .btn {
   appearance: none; border: 1px solid var(--border); background: #162033; color: var(--text);
@@ -53,7 +100,7 @@ h1 { margin: 0; font-size: 1.6rem; line-height: 1.1; }
 .btn-primary:hover:not(:disabled) { background: var(--primary-hover); border-color: var(--primary-hover); }
 .btn-ghost { background: transparent; }
 .btn-sm { padding: 7px 10px; font-size: .9rem; border-radius: 8px; }
-.lang-select { padding: 6px 8px; min-width: 58px; background: #162033; color: var(--text); }
+.lang-select { padding: 6px 8px; min-width: 58px; background: #162033; color: var(--text); text-align: center; }
 .file-label { display: inline-flex; align-items: center; gap: 6px; }
 .file-label:has(input:disabled) { opacity: .45; cursor: not-allowed; pointer-events: none; }
 

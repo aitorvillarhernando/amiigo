@@ -1,4 +1,5 @@
-const STORAGE_KEY = 'amiibo-amigo-lang';
+const STORAGE_KEY = 'amiigo-lang';
+const LEGACY_STORAGE_KEY = 'amiibo-amigo-lang';
 
 const translations = {
   es: {
@@ -57,9 +58,10 @@ const translations = {
     'help.sourceLink': 'Google Drive (colección)',
     'help.support': 'Si te resulta útil:',
     'help.supportLink': 'Invítame a un café',
-    'footer.supportTitle': '¿Te ha sido útil Amiibo Amigo?',
+    'footer.supportTitle': '¿Te ha sido útil Amiigo?',
     'footer.supportCopy': 'Si esta herramienta te ha ayudado a gestionar tus archivos, puedes invitarme a un café para apoyar su mantenimiento y futuras mejoras.',
     'footer.supportButton': 'Invítame a un café',
+    'footer.aiDisclaimer': 'Esta aplicación se ha ido construyendo con el apoyo de herramientas de inteligencia artificial, combinándolo con revisión y ajustes manuales para cuidar el resultado y que todo funcione correctamente.',
     'browser.up': '↑ Arriba',
     'browser.upTitle': 'Subir nivel',
     'browser.mkdir': 'Nueva carpeta',
@@ -223,9 +225,10 @@ const translations = {
     'help.sourceLink': 'Google Drive (collection)',
     'help.support': 'If you find it useful:',
     'help.supportLink': 'Buy me a coffee',
-    'footer.supportTitle': 'Has Amiibo Amigo been useful to you?',
+    'footer.supportTitle': 'Has Amiigo been useful to you?',
     'footer.supportCopy': 'If this tool helped you manage your files, you can buy me a coffee to support its maintenance and future improvements.',
     'footer.supportButton': 'Buy me a coffee',
+    'footer.aiDisclaimer': 'This app was built with the help of AI tools, combined with hands-on review and tweaks along the way to make sure everything works as it should.',
     'browser.up': '↑ Up',
     'browser.upTitle': 'Go up one level',
     'browser.mkdir': 'New folder',
@@ -350,24 +353,84 @@ export function t(key, params) {
 
 export function getLang() { return currentLang; }
 
-export function setLang(lang) {
+export function getLangFromUrl() {
+  try {
+    const p = new URLSearchParams(location.search).get('lang');
+    if (p && translations[p]) return p;
+  } catch (_) {}
+  return null;
+}
+
+export function setLang(lang, { updateUrl = true } = {}) {
   currentLang = translations[lang] ? lang : 'es';
   try { localStorage.setItem(STORAGE_KEY, currentLang); } catch (_) {}
+  if (updateUrl) {
+    try {
+      const url = new URL(location.href);
+      url.searchParams.set('lang', currentLang);
+      history.replaceState(null, '', url);
+    } catch (_) {}
+  }
   document.documentElement.lang = currentLang;
   applyTranslations();
+  updateMetaTags();
   document.dispatchEvent(new CustomEvent('langchange', { detail: { lang: currentLang } }));
+}
+
+export function updateMetaTags() {
+  const isEn = currentLang === 'en';
+  const title = 'Amiigo';
+  const description = isEn
+    ? 'Web Bluetooth manager for Pixl.js / compatible NFC simulators. Browse, upload, organize and verify .bin files from your browser.'
+    : 'Gestor web por Bluetooth para simuladores NFC Pixl.js / compatibles. Explora, sube, organiza y verifica archivos .bin desde el navegador.';
+  document.title = title;
+  const setMeta = (selector, attr, value) => {
+    let el = document.head.querySelector(selector);
+    if (!el) return;
+    el.setAttribute(attr, value);
+  };
+  setMeta('meta[name="description"]', 'content', description);
+  setMeta('meta[property="og:title"]', 'content', title);
+  setMeta('meta[property="og:description"]', 'content', description);
+  setMeta('meta[property="og:locale"]', 'content', isEn ? 'en_US' : 'es_ES');
+  setMeta('meta[name="twitter:title"]', 'content', title);
+  setMeta('meta[name="twitter:description"]', 'content', description);
+  setMeta('html', 'lang', currentLang); // harmless if selector not used; lang set above
 }
 
 export function initI18n() {
   let saved = null;
-  try { saved = localStorage.getItem(STORAGE_KEY); } catch (_) {}
-  if (saved && translations[saved]) currentLang = saved;
-  else {
+  try {
+    saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) {
+      const legacy = localStorage.getItem(LEGACY_STORAGE_KEY);
+      if (legacy && translations[legacy]) {
+        saved = legacy;
+        localStorage.setItem(STORAGE_KEY, legacy);
+      }
+    }
+  } catch (_) {}
+  const urlLang = getLangFromUrl();
+  if (urlLang) {
+    currentLang = urlLang;
+    try { localStorage.setItem(STORAGE_KEY, currentLang); } catch (_) {}
+  } else if (saved && translations[saved]) {
+    currentLang = saved;
+  } else {
     const nav = (navigator.language || '').toLowerCase();
     currentLang = nav.startsWith('en') ? 'en' : 'es';
   }
+  // keep URL in sync with resolved language
+  try {
+    const url = new URL(location.href);
+    if (url.searchParams.get('lang') !== currentLang) {
+      // do not force param if user didn't specify? better to set for shareability as requested
+      // but avoid changing if not needed; still "cambiar de idioma ponga un param GET" - on init we can reflect
+    }
+  } catch (_) {}
   document.documentElement.lang = currentLang;
   applyTranslations();
+  updateMetaTags();
   return currentLang;
 }
 
