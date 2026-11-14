@@ -1,4 +1,14 @@
 // Pixl.js / Allmiibo BLE VFS client (Web Bluetooth)
+//
+// Portions of this file are derived from Mochi by Tasken:
+//   https://github.com/tasken/Mochi (app/client.js)
+// Copyright (c) 2026 Tasken
+// Licensed under the MIT License. See THIRD_PARTY_NOTICES.md for details.
+//
+// Modifications and additional integration code for Amiigo:
+// Copyright (c) 2026 Aitor
+// Licensed under the MIT License (see LICENSE).
+//
 // Protocol based on Pixl.js BLE protocol (NUS + VFS commands).
 
 import { t } from '../i18n.js';

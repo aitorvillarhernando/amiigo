@@ -73,6 +73,12 @@ Si hay discrepancia o el archivo no aparece, la transferencia se marca como fall
 - Límites del protocolo (Pixl.js VFS): nombre máx. 47 bytes, ruta de archivo máx. 63 bytes, ruta de carpeta máx. 55 bytes (UTF-8). La app ayuda a corregirlos antes de transferir.
 - La velocidad depende del MTU negociado y de la latencia BLE del dispositivo.
 - Operaciones como formateo no están expuestas en la UI (por seguridad), aunque el cliente soporta el comando.
+
+
+### Atribuciones y avisos de terceros
+
+- Este proyecto incluye código derivado de [Mochi](https://github.com/tasken/Mochi) (Tasken, licencia MIT), especialmente en partes de `js/ble/pixl-client.js`. Consulta [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) para el aviso de copyright y la licencia correspondiente.
+
 ---
 
 ## English
@@ -140,3 +146,8 @@ If there is a mismatch or the file does not appear, that file transfer is marked
 - Protocol limits (Pixl.js VFS): max name 47 bytes, max file path 63 bytes, max folder path 55 bytes (UTF-8). The app helps fix these before transfer.
 - Speed depends on negotiated MTU and BLE device latency.
 - Operations like formatting are not exposed in the UI (for safety), although the client supports the command.
+
+
+### Third-party attributions and notices
+
+- This project includes code derived from [Mochi](https://github.com/tasken/Mochi) (Tasken, MIT License), particularly in parts of `js/ble/pixl-client.js`. See [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) for the applicable copyright and license notice.
