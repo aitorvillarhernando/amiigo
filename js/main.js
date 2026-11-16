@@ -17,9 +17,10 @@ import {
   updateFirmwareFlow,
   downloadFile,
   formatDriveAction,
+  downloadDirectory,
 } from './services/device.js';
 
-setBrowserHandlers({ onRename, onDelete, onMovePick, onDownload: downloadFile });
+setBrowserHandlers({ onRename, onDelete, onMovePick, onDownload: downloadFile, onDownloadDir: downloadDirectory });
 
 const lang = initI18n();
 if (ui.langSelect) {

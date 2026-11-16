@@ -77,11 +77,14 @@ export function renderFiles() {
     const etype = isDir ? 'dir' : 'file';
     const isEn = document.documentElement.lang === 'en';
     const dlTitle = isEn ? 'Download' : 'Descargar';
+    const dlDirTitle = t('browser.downloadDir');
     const moveTitle = isEn ? 'Move' : 'Mover';
     const renTitle = isEn ? 'Rename' : 'Renombrar';
     const delTitle = isEn ? 'Delete' : 'Eliminar';
     const nameCell = `<div class="name-cell"><span class="icon">${icon}</span><span class="name-link ${isDir ? 'dir' : 'file'}" data-type="${etype}" data-name="${escapeAttr(e.name)}">${escapeHtml(e.name)}</span></div>`;
-    const dlBtn = !isDir ? `<button class="icon-btn" data-act="download" data-name="${escapeAttr(e.name)}" title="${escapeAttr(dlTitle)}" aria-label="${escapeAttr(dlTitle)}">⬇️</button>` : '';
+    const dlBtn = !isDir
+      ? `<button class="icon-btn" data-act="download" data-name="${escapeAttr(e.name)}" title="${escapeAttr(dlTitle)}" aria-label="${escapeAttr(dlTitle)}">⬇️</button>`
+      : `<button class="icon-btn" data-act="download-dir" data-name="${escapeAttr(e.name)}" title="${escapeAttr(dlDirTitle)}" aria-label="${escapeAttr(dlDirTitle)}">⬇️</button>`;
     const actions = `
       ${dlBtn}
       <button class="icon-btn" data-act="move" data-name="${escapeAttr(e.name)}" data-type="${etype}" title="${escapeAttr(moveTitle)}" aria-label="${escapeAttr(moveTitle)}">📦</button>
@@ -104,6 +107,7 @@ export function renderFiles() {
   tbody.querySelectorAll('[data-act="delete"]').forEach(btn => btn.addEventListener('click', () => onDelete(btn.dataset.name, btn.dataset.type)));
   tbody.querySelectorAll('[data-act="move"]').forEach(btn => btn.addEventListener('click', () => onMovePick(btn.dataset.name, btn.dataset.type)));
   tbody.querySelectorAll('[data-act="download"]').forEach(btn => btn.addEventListener('click', () => onDownload(btn.dataset.name)));
+  tbody.querySelectorAll('[data-act="download-dir"]').forEach(btn => btn.addEventListener('click', () => onDownloadDir(btn.dataset.name)));
   tbody.querySelectorAll('.icon-btn').forEach(b => b.disabled = !!state.busy);
 
   updateMoveBar();
@@ -147,6 +151,7 @@ export let handlers = {
   onDelete: async () => {},
   onMovePick: () => {},
   onDownload: async () => {},
+  onDownloadDir: async () => {},
 };
 
 export function setBrowserHandlers(h) { handlers = { ...handlers, ...h }; }
@@ -154,3 +159,4 @@ function onRename(name) { return handlers.onRename(name); }
 function onDelete(name, type) { return handlers.onDelete(name, type); }
 function onMovePick(name, type) { return handlers.onMovePick(name, type); }
 function onDownload(name) { return handlers.onDownload(name); }
+function onDownloadDir(name) { return handlers.onDownloadDir(name); }

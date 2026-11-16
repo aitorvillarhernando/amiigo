@@ -374,3 +374,69 @@ export async function formatDriveAction() {
   if (ok) setStatus(t('msg.formatted'), 'success');
   else setStatus(t('msg.errorFormatting', { msg: errMsg }), 'error');
 }
+
+
+async function collectRemoteFilesRecursive(dirPath, relPrefix = '') {
+  const files = [];
+  const list = await state.client.readFolder(dirPath);
+  if (!list.ok) throw new Error(list.error);
+  const entries = list.data || [];
+  for (const e of entries) {
+    const isDir = e.type === 'DIR' || e.type === 'dir';
+    const childRemote = dirPath.endsWith('/') ? (dirPath + e.name) : (dirPath + '/' + e.name);
+    const childRel = relPrefix ? (relPrefix + '/' + e.name) : e.name;
+    if (isDir) {
+      const sub = await collectRemoteFilesRecursive(childRemote, childRel);
+      files.push(...sub);
+    } else {
+      files.push({ remotePath: childRemote, relPath: childRel, size: e.size });
+    }
+  }
+  return files;
+}
+
+export async function downloadDirectory(name) {
+  if (state.busy || !state.client || !state.client.connected) return;
+  if (typeof JSZip === 'undefined') {
+    setStatus(t('msg.zipUnavailable'), 'error');
+    return;
+  }
+  const base = state.cwd.endsWith('/') ? state.cwd : state.cwd + '/';
+  const dirPath = base + name;
+  let ok = false; let errMsg = '';
+  try {
+    setBusy(true, t('busy.downloadingDir', { name }));
+    setStatus(t('status.downloadingDir', { name, count: '…' }), 'info');
+    const files = await collectRemoteFilesRecursive(dirPath, name);
+    setStatus(t('status.downloadingDir', { name, count: files.length }), 'info');
+    const zip = new JSZip();
+    let i = 0;
+    for (const f of files) {
+      i++;
+      setBusy(true, t('busy.downloadingDir', { name }) + ` (${i}/${files.length})`);
+      const res = await state.client.readFileData(f.remotePath);
+      if (!res.ok) throw new Error(`${f.relPath}: ${res.error}`);
+      zip.file(f.relPath, res.data);
+    }
+    setBusy(true, t('status.zipping', { name }));
+    setStatus(t('status.zipping', { name }), 'info');
+    const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${name}.zip`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
+    log(t('msg.downloadedDir', { name }));
+    ok = true;
+  } catch (err) {
+    errMsg = err.message || String(err);
+    log(t('msg.errorDownloadingDir', { msg: errMsg }), 'error');
+  } finally {
+    setBusy(false);
+  }
+  if (ok) setStatus(t('msg.downloadedDir', { name }), 'success');
+  else setStatus(t('msg.errorDownloadingDir', { msg: errMsg }), 'error');
+}
