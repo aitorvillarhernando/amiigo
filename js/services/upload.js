@@ -26,8 +26,9 @@ export async function collectSelectedFiles(fileList, { isDirectory = false } = {
 export async function pickMultipleDirectories() {
   if (!window.showDirectoryPicker) return null;
   const dirs = [];
-  let addMore = true;
-  while (addMore) {
+  // Keep opening the directory picker until the user cancels it.
+  // Cancel/close in the picker means "done selecting folders".
+  while (true) {
     try {
       const dirHandle = await window.showDirectoryPicker({ mode: 'read' });
       dirs.push(dirHandle);
@@ -37,7 +38,6 @@ export async function pickMultipleDirectories() {
       }
       throw err;
     }
-    addMore = confirm(t('confirm.addMoreFolders'));
   }
   if (!dirs.length) return [];
 
