@@ -46,44 +46,64 @@
       </div>
     </header>
 
+    <div id="iosBanner" class="ios-banner hidden" role="status" aria-live="polite">
+      <div class="ios-banner-icon" aria-hidden="true">📱</div>
+      <div class="ios-banner-body">
+        <strong data-i18n="ios.title">Navegador en iOS</strong>
+        <p data-i18n="ios.message">La mayoría de navegadores en iOS no soportan Web Bluetooth. Para conectar tu dispositivo, abre esta página en Bluefy.</p>
+        <a class="ios-banner-link" href="https://apps.apple.com/app/bluefy-web-ble-browser/id1492822055" target="_blank" rel="noopener noreferrer" data-i18n="ios.action">Abrir Bluefy en App Store</a>
+      </div>
+      <button id="iosBannerClose" class="ios-banner-close" type="button" aria-label="Cerrar">✕</button>
+    </div>
+
     <section id="statusBar" class="status status-info" role="status" aria-live="polite">
       <span id="statusSpinner" class="spinner hidden" aria-hidden="true"></span>
       <span id="statusText" data-i18n="status.initial">Listo. Conecta tu dispositivo en modo transferencia BLE.</span>
     </section>
 
     <main class="main">
-      <aside class="panel device-panel">
-        <h2 data-i18n="device.title">Dispositivo</h2>
-        <div class="kv"><span data-i18n="device.status">Estado</span><strong id="devStatus" data-i18n="device.disconnected">Desconectado</strong></div>
-        <div class="kv"><span data-i18n="device.name">Nombre</span><strong id="devName">—</strong></div>
-        <div class="kv"><span data-i18n="device.fw">Versión FW</span><strong id="devVersion">—</strong></div>
-        <div class="kv"><span data-i18n="device.addr">Dirección BLE</span><strong id="devAddr">—</strong></div>
-
-        <div class="drive-box">
-          <div class="drive-head">
-            <span data-i18n="device.storage">Almacenamiento</span>
-            <strong id="driveLabel">—</strong>
+      <aside class="panel device-panel" id="devicePanel">
+        <h2 class="panel-title">
+          <button type="button" class="panel-toggle" id="devicePanelToggle" aria-expanded="true" aria-controls="devicePanelContent">
+            <span data-i18n="device.title">Dispositivo</span>
+            <span class="chev" aria-hidden="true">▾</span>
+          </button>
+        </h2>
+        <div class="device-panel-content" id="devicePanelContent">
+          <div class="device-kv-grid">
+            <div class="kv"><span data-i18n="device.status">Estado</span><strong id="devStatus" data-i18n="device.disconnected">Desconectado</strong></div>
+            <div class="kv"><span data-i18n="device.name">Nombre</span><strong id="devName">—</strong></div>
+            <div class="kv"><span data-i18n="device.fw">Versión FW</span><strong id="devVersion">—</strong></div>
+            <div class="kv"><span data-i18n="device.addr">Dirección BLE</span><strong id="devAddr">—</strong></div>
           </div>
-          <div class="progress"><div id="driveBar" class="progress-bar" style="width:0%"></div></div>
-          <div class="drive-meta" id="driveMeta">—</div>
-        </div>
 
-        <div class="actions-stack">
-          <button id="refreshBtn" class="btn" disabled data-i18n="device.refresh">Actualizar</button>
-          <button id="dfuBtn" class="btn btn-ghost" disabled data-i18n="device.updateFw" data-i18n-title="device.updateFwTitle" title="Reiniciar en modo actualización de firmware (DFU)">Actualizar firmware</button>
-          <!--button id="formatBtn" class="btn btn-ghost btn-danger" disabled data-i18n="device.format" data-i18n-title="device.formatTitle" title="Borrar todos los datos de la unidad seleccionada">Formatear unidad</button-->
-        </div>
+          <div class="drive-box">
+            <div class="drive-head">
+              <span data-i18n="device.storage">Almacenamiento</span>
+              <strong id="driveLabel">—</strong>
+            </div>
+            <div class="progress"><div id="driveBar" class="progress-bar" style="width:0%"></div></div>
+            <div class="drive-meta" id="driveMeta">—</div>
+          </div>
 
-        <details class="help">
-          <summary data-i18n="help.summary">Ayuda rápida</summary>
-          <ul>
-            <li data-i18n="help.li1">Usa Chrome, Edge u otro navegador compatible con Web Bluetooth.</li>
-            <li data-i18n="help.li2">En el dispositivo, entra al modo de transferencia de archivos por Bluetooth.</li>
-            <li data-i18n="help.li3">La verificación tras la subida compara el tamaño reportado por el dispositivo con el archivo local.</li>
-            <li data-i18n="help.li4">Para mover: pulsa "Mover" (📦) en un elemento, navega a la carpeta destino y usa "Mover aquí".</li>
-            <li id="localDriveSourceItem" class="muted"><span data-i18n="help.source">Fuente de .bin:</span> <a href="https://drive.google.com/drive/folders/1-kd-PpAzqvOhgiFTymWSQXdfWGlZiAuP" target="_blank" rel="noopener noreferrer" data-i18n="help.sourceLink">Google Drive (colección)</a></li>
-          </ul>
-        </details>
+          <div class="actions-stack">
+            <button id="refreshBtn" class="btn" disabled data-i18n="device.refresh">Actualizar</button>
+            <button id="backupBtn" class="btn" disabled data-i18n="device.backup" data-i18n-title="device.backupTitle" title="Descargar una copia de seguridad completa de la unidad en ZIP">Backup (ZIP)</button>
+            <button id="dfuBtn" class="btn btn-ghost" disabled data-i18n="device.updateFw" data-i18n-title="device.updateFwTitle" title="Reiniciar en modo actualización de firmware (DFU)">Actualizar firmware</button>
+            <!--button id="formatBtn" class="btn btn-ghost btn-danger" disabled data-i18n="device.format" data-i18n-title="device.formatTitle" title="Borrar todos los datos de la unidad seleccionada">Formatear unidad</button-->
+          </div>
+
+          <details class="help">
+            <summary data-i18n="help.summary">Ayuda rápida</summary>
+            <ul>
+              <li data-i18n="help.li1">Usa Chrome, Edge u otro navegador compatible con Web Bluetooth.</li>
+              <li data-i18n="help.li2">En el dispositivo, entra al modo de transferencia de archivos por Bluetooth.</li>
+              <li data-i18n="help.li3">La verificación tras la subida compara el tamaño reportado por el dispositivo con el archivo local.</li>
+              <li data-i18n="help.li4">Para mover: pulsa "Mover" (📦) en un elemento, navega a la carpeta destino y usa "Mover aquí".</li>
+              <li id="localDriveSourceItem" class="muted"><span data-i18n="help.source">Fuente de .bin:</span> <a href="https://drive.google.com/drive/folders/1-kd-PpAzqvOhgiFTymWSQXdfWGlZiAuP" target="_blank" rel="noopener noreferrer" data-i18n="help.sourceLink">Google Drive (colección)</a></li>
+            </ul>
+          </details>
+        </div>
       </aside>
 
       <section class="panel browser-panel" id="browserPanel">

@@ -22,6 +22,7 @@ export function setControlsConnected(connected) {
   const on = !!connected;
   ui.connectBtn.textContent = on ? t('header.disconnect') : t('header.connect');
   ui.refreshBtn.disabled = !on || state.busy;
+  if (ui.backupBtn) ui.backupBtn.disabled = !on || state.busy;
   ui.dfuBtn.disabled = !on || state.busy;
   if (ui.formatBtn) ui.formatBtn.disabled = !on || state.busy;
   ui.upBtn.disabled = !on || state.busy;

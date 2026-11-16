@@ -102,6 +102,7 @@ h1 { margin: 0; font-size: 1.6rem; line-height: 1.1; }
 .btn-primary:hover:not(:disabled) { background: var(--primary-hover); border-color: var(--primary-hover); }
 .btn-ghost { background: transparent; }
 .btn-sm { padding: 6px 10px; font-size: .9rem; border-radius: 8px; min-height: 34px; }
+#dfuBtn { grid-column: 1 / -1; }
 .lang-select { padding: 6px 8px; min-width: 58px; min-height: 34px; background: #162033; color: var(--text); text-align: center; }
 .file-label { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
 .file-label:has(input:disabled) { opacity: .45; cursor: not-allowed; pointer-events: none; }
@@ -281,4 +282,58 @@ h1 { margin: 0; font-size: 1.6rem; line-height: 1.1; }
   .toolbar-group-main { display: contents; }
   .toolbar-group-main .search-input { flex: 1 1 100%; width: 100%; }
   .toolbar-group-upload { display: inline-flex; flex: 0 0 auto; width: auto; }
+}
+
+
+.ios-banner { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border-radius: 12px; border: 1px solid rgba(245,158,11,.35); background: rgba(245,158,11,.12); color: var(--text); }
+.ios-banner.hidden { display: none; }
+.ios-banner-icon { font-size: 1.4rem; line-height: 1; flex: 0 0 auto; }
+.ios-banner-body { flex: 1; min-width: 0; }
+.ios-banner-body strong { display: block; margin-bottom: 2px; }
+.ios-banner-body p { margin: 0 0 6px; color: var(--muted); font-size: .92rem; line-height: 1.4; }
+.ios-banner-link { color: #7dd3fc; text-decoration: none; font-weight: 600; }
+.ios-banner-link:hover { text-decoration: underline; }
+.ios-banner-close { appearance: none; border: none; background: transparent; color: var(--muted); cursor: pointer; font-size: 1rem; padding: 2px 4px; border-radius: 6px; }
+.ios-banner-close:hover { color: var(--text); background: rgba(255,255,255,.06); }
+
+/* Bluetooth unavailable: dim/block device interaction areas */
+.bt-unavailable .device-panel,
+.bt-unavailable .browser-panel { opacity: .45; filter: saturate(.7); }
+.bt-unavailable .device-panel,
+.bt-unavailable .device-panel *,
+.bt-unavailable .browser-panel,
+.bt-unavailable .browser-panel *,
+.bt-unavailable #connectBtn { cursor: not-allowed !important; }
+.bt-unavailable .device-panel,
+.bt-unavailable .browser-panel { pointer-events: none; }
+.bt-unavailable #connectBtn { pointer-events: none; opacity: .6; }
+.bt-unavailable #langSelect,
+.bt-unavailable .lang-select { pointer-events: auto; cursor: pointer !important; opacity: 1; filter: none; }
+
+
+.device-panel { container-type: inline-size; container-name: device; }
+.panel-title { margin: 0 0 12px; }
+.panel-toggle {
+  width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  appearance: none; background: transparent; border: none; color: inherit; font: inherit; padding: 0; margin: 0; cursor: default; text-align: left;
+}
+.panel-toggle .chev { display: none; transition: transform .2s ease; }
+.device-panel-content { overflow: hidden; height: auto; transition: height .2s ease; }
+.device-panel.collapsed .device-panel-content { height: 0; }
+.device-panel.collapsed .panel-toggle .chev { transform: rotate(-90deg); }
+.device-kv-grid { display: grid; grid-template-columns: 1fr; gap: 0; }
+
+@container device (min-width: 420px) {
+  .device-kv-grid { column-gap: 12px; }
+  .device-kv-grid .kv { border-bottom: 1px dashed rgba(148,163,184,.25); }
+}
+@container device (min-width: 700px) {
+  .device-kv-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 900px) {
+  .panel-toggle { cursor: pointer; }
+  .panel-toggle .chev { display: inline-block; }
+  .panel-title { margin-bottom: 8px; }
+  .device-panel.collapsed .panel-title { margin-bottom: 0; }
 }

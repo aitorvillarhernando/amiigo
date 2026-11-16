@@ -8,16 +8,59 @@ import { getParentPath, utf8Length } from '../ble/pixl-client.js';
 import { MAX_FILE_NAME_BYTES, MAX_FILE_PATH_BYTES, MAX_FOLDER_PATH_BYTES } from '../constants.js';
 import { isValidName } from '../utils.js';
 
+function isIosDevice() {
+  try {
+    const ua = navigator.userAgent || '';
+    const iOSUA = /iPad|iPhone|iPod/.test(ua);
+    const iPadOS = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+    return iOSUA || iPadOS;
+  } catch (_) {
+    return false;
+  }
+}
+
+function initIosBanner() {
+  const banner = document.getElementById('iosBanner');
+  const close = document.getElementById('iosBannerClose');
+  if (!banner) return;
+  const dismissed = (() => { try { return sessionStorage.getItem('amiigo-ios-banner-dismissed') === '1'; } catch (_) { return false; } })();
+  const show = isIosDevice() && !isWebBluetoothSupported() && !dismissed;
+  banner.classList.toggle('hidden', !show);
+  if (close && !close.dataset.bound) {
+    close.dataset.bound = '1';
+    close.addEventListener('click', () => {
+      banner.classList.add('hidden');
+      try { sessionStorage.setItem('amiigo-ios-banner-dismissed', '1'); } catch (_) {}
+    });
+  }
+  const closeLabel = t('ios.close');
+  if (close) close.setAttribute('aria-label', closeLabel);
+}
+
 export function initBluetoothSupport(refreshOnly = false) {
-  if (isWebBluetoothSupported()) {
+  const supported = isWebBluetoothSupported();
+  if (supported) {
     ui.supportBadge.textContent = t('badge.available');
     ui.supportBadge.className = 'badge badge-ok';
+    document.body.classList.remove('bt-unavailable');
+    document.querySelector('.app')?.classList.remove('bt-unavailable');
   } else {
     ui.supportBadge.textContent = t('badge.unavailable');
     ui.supportBadge.className = 'badge badge-bad';
     ui.connectBtn.disabled = true;
-    if (!refreshOnly) setStatus(t('badge.unavailable') + '. ' + (document.documentElement.lang === 'en' ? 'Use Chrome or Edge on desktop/Android.' : 'Usa Chrome o Edge en escritorio/Android.'), 'error');
+    document.body.classList.add('bt-unavailable');
+    document.querySelector('.app')?.classList.add('bt-unavailable');
+    if (!refreshOnly) {
+      const isIos = isIosDevice();
+      const msg = isIos
+        ? (document.documentElement.lang === 'en'
+            ? 'Web Bluetooth is not available in this browser. On iOS, try Bluefy.'
+            : 'Web Bluetooth no está disponible en este navegador. En iOS, prueba Bluefy.')
+        : (t('badge.unavailable') + '. ' + (document.documentElement.lang === 'en' ? 'Use Chrome or Edge on desktop/Android.' : 'Usa Chrome o Edge en escritorio/Android.'));
+      setStatus(msg, 'error');
+    }
   }
+  initIosBanner();
   if (!window.showDirectoryPicker) {
     ui.uploadMultiDirBtn.title = document.documentElement.lang === 'en'
       ? 'Your browser does not support selecting multiple folders; use individual "Upload folder".'
@@ -395,40 +438,43 @@ async function collectRemoteFilesRecursive(dirPath, relPrefix = '') {
   return files;
 }
 
+async function downloadRemotePathAsZip(remotePath, displayName, zipFileName, relRoot = '') {
+  if (typeof JSZip === 'undefined') {
+    throw new Error(t('msg.zipUnavailable'));
+  }
+  setBusy(true, t('busy.downloadingDir', { name: displayName }));
+  setStatus(t('status.downloadingDir', { name: displayName, count: '…' }), 'info');
+  const files = await collectRemoteFilesRecursive(remotePath, relRoot);
+  setStatus(t('status.downloadingDir', { name: displayName, count: files.length }), 'info');
+  const zip = new JSZip();
+  let i = 0;
+  for (const f of files) {
+    i++;
+    setBusy(true, t('busy.downloadingDir', { name: displayName }) + ` (${i}/${files.length})`);
+    const res = await state.client.readFileData(f.remotePath);
+    if (!res.ok) throw new Error(`${f.relPath}: ${res.error}`);
+    zip.file(f.relPath, res.data);
+  }
+  setBusy(true, t('status.zipping', { name: displayName }));
+  setStatus(t('status.zipping', { name: displayName }), 'info');
+  const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = zipFileName;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+
 export async function downloadDirectory(name) {
   if (state.busy || !state.client || !state.client.connected) return;
-  if (typeof JSZip === 'undefined') {
-    setStatus(t('msg.zipUnavailable'), 'error');
-    return;
-  }
   const base = state.cwd.endsWith('/') ? state.cwd : state.cwd + '/';
   const dirPath = base + name;
   let ok = false; let errMsg = '';
   try {
-    setBusy(true, t('busy.downloadingDir', { name }));
-    setStatus(t('status.downloadingDir', { name, count: '…' }), 'info');
-    const files = await collectRemoteFilesRecursive(dirPath, name);
-    setStatus(t('status.downloadingDir', { name, count: files.length }), 'info');
-    const zip = new JSZip();
-    let i = 0;
-    for (const f of files) {
-      i++;
-      setBusy(true, t('busy.downloadingDir', { name }) + ` (${i}/${files.length})`);
-      const res = await state.client.readFileData(f.remotePath);
-      if (!res.ok) throw new Error(`${f.relPath}: ${res.error}`);
-      zip.file(f.relPath, res.data);
-    }
-    setBusy(true, t('status.zipping', { name }));
-    setStatus(t('status.zipping', { name }), 'info');
-    const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${name}.zip`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1500);
+    await downloadRemotePathAsZip(dirPath, name, `${name}.zip`, name);
     log(t('msg.downloadedDir', { name }));
     ok = true;
   } catch (err) {
@@ -439,4 +485,24 @@ export async function downloadDirectory(name) {
   }
   if (ok) setStatus(t('msg.downloadedDir', { name }), 'success');
   else setStatus(t('msg.errorDownloadingDir', { msg: errMsg }), 'error');
+}
+
+export async function backupDrive() {
+  if (state.busy || !state.client || !state.client.connected || !state.drive) return;
+  const root = `${state.drive.label}:/`;
+  const displayName = root;
+  const zipName = `backup-${state.drive.label}.zip`;
+  let ok = false; let errMsg = '';
+  try {
+    await downloadRemotePathAsZip(root, displayName, zipName, '');
+    log(t('msg.backupCompleted', { name: zipName }));
+    ok = true;
+  } catch (err) {
+    errMsg = err.message || String(err);
+    log(t('msg.errorBackup', { msg: errMsg }), 'error');
+  } finally {
+    setBusy(false);
+  }
+  if (ok) setStatus(t('msg.backupCompleted', { name: zipName }), 'success');
+  else setStatus(t('msg.errorBackup', { msg: errMsg }), 'error');
 }

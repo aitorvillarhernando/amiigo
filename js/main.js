@@ -18,6 +18,7 @@ import {
   downloadFile,
   formatDriveAction,
   downloadDirectory,
+  backupDrive,
 } from './services/device.js';
 
 setBrowserHandlers({ onRename, onDelete, onMovePick, onDownload: downloadFile, onDownloadDir: downloadDirectory });
@@ -41,6 +42,7 @@ document.addEventListener('langchange', () => {
 
 ui.connectBtn.addEventListener('click', toggleConnect);
 ui.refreshBtn.addEventListener('click', () => refreshDriveAndList(state.cwd));
+if (ui.backupBtn) ui.backupBtn.addEventListener('click', backupDrive);
 ui.upBtn.addEventListener('click', () => {
   if (!state.cwd || !state.drive) return;
   const root = state.drive.label + ':/';
@@ -214,6 +216,35 @@ function setupDragDrop() {
 }
 
 setupDragDrop();
+
+
+
+function initDevicePanelAccordion() {
+  const panel = document.getElementById('devicePanel');
+  const toggle = document.getElementById('devicePanelToggle');
+  const content = document.getElementById('devicePanelContent');
+  if (!panel || !toggle || !content) return;
+  const mq = window.matchMedia('(max-width: 900px)');
+  const applyMode = () => {
+    const mobile = mq.matches;
+    if (!mobile) {
+      panel.classList.remove('collapsed');
+      toggle.setAttribute('aria-expanded', 'true');
+    } else {
+      // keep current state on resize; ensure aria matches
+      toggle.setAttribute('aria-expanded', panel.classList.contains('collapsed') ? 'false' : 'true');
+    }
+  };
+  toggle.addEventListener('click', () => {
+    if (!mq.matches) return;
+    const collapsed = panel.classList.toggle('collapsed');
+    toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+  });
+  if (mq.addEventListener) mq.addEventListener('change', applyMode);
+  else if (mq.addListener) mq.addListener(applyMode);
+  applyMode();
+}
+initDevicePanelAccordion();
 
 function initLocalOnlyLinks() {
   const isLocal = ['localhost', '127.0.0.1', '[::1]'].includes(location.hostname);

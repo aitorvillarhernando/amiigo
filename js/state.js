@@ -28,6 +28,7 @@ export const ui = {
   driveBar: el('driveBar'),
   driveMeta: el('driveMeta'),
   refreshBtn: el('refreshBtn'),
+  backupBtn: el('backupBtn'),
   dfuBtn: el('dfuBtn'),
   pathbar: el('pathbar'),
   upBtn: el('upBtn'),

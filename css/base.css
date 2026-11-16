@@ -1,4 +1,5 @@
 :root {
+  interpolate-size: allow-keywords;
   --bg: #0f172a;
   --bg-elev: #111827;
   --panel: #1e293b;
