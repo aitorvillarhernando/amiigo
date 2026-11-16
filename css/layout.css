@@ -13,12 +13,9 @@
 .support-footer-text h2 { margin: 0 0 4px; font-size: 1.1rem; text-wrap: balance;  }
 .support-footer-text p { margin: 0; color: var(--muted); font-size: .95rem; line-height: 1.45; }
 .support-footer-btn { flex: 0 0 auto; white-space: nowrap; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; font-weight: 600; max-width: 100%; box-sizing: border-box; }
-@media (max-width: 900px) {
+@media (max-width: 1030px) {
   .support-footer-inner { flex-direction: column; align-items: stretch; text-align: left; }
   .support-footer-btn { width: 100%; justify-content: center; white-space: normal; }
-}
-
-@media (max-width: 900px) {
   .main { grid-template-columns: 1fr; }
   .app { padding: 12px; }
   .header { flex-direction: column; align-items: stretch; gap: 12px; }
@@ -28,7 +25,4 @@
   .header-actions #connectBtn { flex: 1 1 auto; }
   .toolbar { align-items: stretch; }
   .toolbar-actions { width: 100%; }
-}
-@media (max-width: 600px) {
-  .header-actions #connectBtn { width: 100%; }
 }

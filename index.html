@@ -91,32 +91,45 @@
           <div class="pathbar" id="pathbar" aria-label="Ruta actual"></div>
           <div class="toolbar-actions hidden" id="toolbarActions">
             <div class="toolbar-group toolbar-group-main">
-              <input id="searchInput" class="search-input" type="search" data-i18n-placeholder="browser.search" placeholder="Buscar archivos…" aria-label="Buscar archivos">
-              <label class="toggle-inline" data-i18n-title="browser.lowercaseUploadTitle" title="Convertir nombres de archivos y carpetas a minúsculas al subir">
+              <input id="searchInput" class="search-input" type="search" data-i18n-placeholder="browser.search" data-i18n-aria-label="browser.search" placeholder="Buscar archivos…" aria-label="Buscar archivos">
+              <label class="toggle-inline icon-toggle" data-i18n-title="browser.lowercaseUploadTitle" title="Convertir nombres de archivos y carpetas a minúsculas al subir">
                 <input id="lowercaseUploadToggle" type="checkbox">
-                <span data-i18n="browser.lowercaseUpload">Minúsculas al subir</span>
+                <span class="icon" aria-hidden="true">a-z↓</span>
+                <span class="sr-only" data-i18n="browser.lowercaseUpload">Minúsculas al subir</span>
               </label>
-              <button id="upBtn" class="btn btn-sm" disabled data-i18n="browser.up" data-i18n-title="browser.upTitle" title="Subir nivel">↑ Arriba</button>
-              <button id="mkdirBtn" class="btn btn-sm" disabled data-i18n="browser.mkdir">Nueva carpeta</button>
+              <button id="upBtn" class="btn btn-sm btn-iconic" disabled data-i18n-title="browser.upTitle" title="Subir nivel" aria-label="Subir nivel">
+                <span aria-hidden="true">⬆</span><span class="sr-only" data-i18n="browser.up">Arriba</span>
+              </button>
+              <button id="mkdirBtn" class="btn btn-sm btn-iconic" disabled data-i18n-title="browser.mkdir" title="Nueva carpeta" aria-label="Nueva carpeta">
+                <span aria-hidden="true">📁+</span><span class="sr-only" data-i18n="browser.mkdir">Nueva carpeta</span>
+              </button>
             </div>
             <div class="toolbar-group toolbar-group-upload">
-              <label class="btn btn-sm btn-primary file-label" id="uploadFilesLabel">
-                <span data-i18n="browser.uploadFiles">Subir archivos (.bin)</span>
+              <label class="btn btn-sm btn-primary file-label btn-iconic" id="uploadFilesLabel" data-i18n-title="browser.uploadFiles" title="Subir archivos (.bin)">
+                <span aria-hidden="true">📄↑</span><span class="sr-only" data-i18n="browser.uploadFiles">Subir archivos (.bin)</span>
                 <input id="fileInput" type="file" multiple accept=".bin,application/octet-stream" hidden disabled>
               </label>
-              <label class="btn btn-sm btn-primary file-label" id="uploadDirLabel">
-                <span data-i18n="browser.uploadDir">Subir carpeta</span>
+              <label class="btn btn-sm btn-primary file-label btn-iconic" id="uploadDirLabel" data-i18n-title="browser.uploadDir" title="Subir carpeta">
+                <span aria-hidden="true">📁↑</span><span class="sr-only" data-i18n="browser.uploadDir">Subir carpeta</span>
                 <input id="dirInput" type="file" webkitdirectory directory multiple hidden disabled>
               </label>
-              <button id="uploadMultiDirBtn" class="btn btn-sm btn-primary" disabled data-i18n="browser.uploadMultiDir" data-i18n-title="browser.uploadMultiDirTitle" title="Seleccionar varias carpetas y subirlas juntas">Subir varias carpetas</button>
+              <button id="uploadMultiDirBtn" class="btn btn-sm btn-primary btn-iconic" disabled data-i18n-title="browser.uploadMultiDir" title="Subir varias carpetas" aria-label="Subir varias carpetas">
+                <span aria-hidden="true">
+                  <span class="icon-stack">
+                    <span>📁</span><span>📁</span><span>📁</span>
+                  </span>
+                  ↑
+                </span>
+                <span class="sr-only" data-i18n="browser.uploadMultiDir">Subir varias carpetas</span>
+              </button>
             </div>
           </div>
         </div>
         <div id="moveBar" class="move-bar hidden" aria-live="polite">
           <div class="move-info"><strong data-i18n="browser.moving">Moviendo:</strong> <span id="moveName"></span></div>
           <div class="move-actions">
-            <button id="pasteMoveBtn" class="btn btn-sm btn-primary" data-i18n="browser.moveHere">Mover aquí</button>
-            <button id="cancelMoveBtn" class="btn btn-sm btn-ghost" data-i18n="browser.cancel">Cancelar</button>
+            <button id="pasteMoveBtn" class="btn btn-sm btn-primary btn-iconic" data-i18n-title="browser.moveHere" title="Mover aquí" aria-label="Mover aquí"><span aria-hidden="true">📥</span><span class="sr-only" data-i18n="browser.moveHere">Mover aquí</span></button>
+            <button id="cancelMoveBtn" class="btn btn-sm btn-ghost btn-iconic" data-i18n-title="browser.cancel" title="Cancelar" aria-label="Cancelar"><span aria-hidden="true">✖</span><span class="sr-only" data-i18n="browser.cancel">Cancelar</span></button>
           </div>
         </div>
 
@@ -142,7 +155,7 @@
     <section class="panel transfers-panel">
       <div class="transfers-head">
         <h2 data-i18n="transfers.title">Transferencias</h2>
-        <button id="clearTransfersBtn" class="btn btn-sm btn-ghost" data-i18n="transfers.clear">Limpiar</button>
+        <button id="clearTransfersBtn" class="btn btn-sm btn-ghost btn-iconic" data-i18n-title="transfers.clear" title="Limpiar" aria-label="Limpiar"><span aria-hidden="true">🧹</span><span class="sr-only" data-i18n="transfers.clear">Limpiar</span></button>
       </div>
       <div id="transferList" class="transfer-list">
         <div class="empty muted" data-i18n="transfers.empty">No hay transferencias en curso.</div>
